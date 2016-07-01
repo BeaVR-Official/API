@@ -99,8 +99,8 @@ router.post("/:idApp",function(req,res){
 */
 
 router.get("/:idApp",function(req,res){
-    var query = "SELECT * FROM ?? WHERE ??=? ORDER BY date DESC";
-    var table = ["Comments","application",req.params.idApp];
+    var query = "SELECT * FROM `AllCommentsInfos` WHERE ??=? ORDER BY date DESC";
+    var table = ["application",req.params.idApp];
     
     query = mysql.format(query,table);
     req.app.locals.connection.query(query,function(err,rows){
@@ -113,8 +113,8 @@ router.get("/:idApp",function(req,res){
 });
 
 router.get("/:idApp/:limit",function(req,res){
-    var query = "SELECT * FROM ?? WHERE ??=? ORDER BY date DESC LIMIT ?";
-    var table = ["Comments","application",req.params.idApp, parseInt(req.params.limit)];
+    var query = "SELECT * FROM `AllCommentsInfos` WHERE ??=? ORDER BY date DESC LIMIT ?";
+    var table = ["application",req.params.idApp, parseInt(req.params.limit)];
     
     query = mysql.format(query,table);
     req.app.locals.connection.query(query,function(err,rows){
