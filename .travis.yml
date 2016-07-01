@@ -1,0 +1,17 @@
+language: node_js
+node_js:
+  - "6.0.0"
+branches:
+  only:
+  - master
+before_script:
+  - npm install
+  
+script:
+  - npm test
+
+deploy:
+  provider: heroku
+  app: beavr-api
+  api_key:
+    secure: 51f23eff-773b-439b-92f3-c192d268d38d
