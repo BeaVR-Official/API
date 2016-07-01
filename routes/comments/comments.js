@@ -99,7 +99,7 @@ router.post("/:idApp",function(req,res){
 */
 
 router.get("/:idApp",function(req,res){
-    var query = "SELECT * FROM ?? WHERE ??=? ORDER BY date DESC LIMIT ?";
+    var query = "SELECT * FROM ?? WHERE ??=? ORDER BY date DESC LIMIT 2";
     var table = ["Comments","application",req.params.idApp, req.query.limit];
     
     query = mysql.format(query,table);
