@@ -111,9 +111,9 @@ router.get("/:idApp",function(req,res){
     });
 });
 
-router.get("/:idApp/:limit",function(req,res){
+router.get("/:idApp/new",function(req,res){
     var query = "SELECT * FROM ?? WHERE ??=? ORDER BY date DESC LIMIT ?";
-    var table = ["Comments","application",req.params.idApp, req.params.limit];
+    var table = ["Comments","application",req.params.idApp, req.query.limit];
     
     query = mysql.format(query,table);
     req.app.locals.connection.query(query,function(err,rows){
