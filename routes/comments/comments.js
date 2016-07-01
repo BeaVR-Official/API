@@ -111,7 +111,7 @@ router.get("/:idApp",function(req,res){
     });
 });
 
-router.get("/:idApp/new/:limit",function(req,res){
+router.get("/:idApp/new",function(req,res){
     var query = "SELECT * FROM ?? WHERE ??=? ORDER BY date DESC LIMIT ?";
     var table = ["Comments","application",req.params.idApp, req.query.limit];
     
