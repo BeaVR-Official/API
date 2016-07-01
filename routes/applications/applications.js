@@ -60,7 +60,7 @@ router.get("/", function(req, res){
     });
 });
 
-router.get("/state/:state(\\d+)/", function(req, res){
+router.get("/state/:state", function(req, res){
 
     var query = "SELECT * FROM `AllApplicationsInfos` WHERE ??=?";
     var table = ["state", req.params.state];
