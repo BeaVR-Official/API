@@ -100,6 +100,7 @@ router.post("/:idApp",function(req,res){
 router.get("/:idApp",function(req,res){
     var query = "SELECT * FROM ?? WHERE ??=? ORDER BY date DESC";
     var table = ["Comments","application",req.params.idApp];
+    
     query = mysql.format(query,table);
     req.app.locals.connection.query(query,function(err,rows){
         if(err) {
@@ -110,12 +111,10 @@ router.get("/:idApp",function(req,res){
     });
 });
 
-router.get("/new/:idApp",function(req,res){
-    if (req.body.limit == 3)
-        var query = "SELECT * FROM ?? WHERE ??=? ORDER BY date DESC LIMIT 3";
-    else
-        var query = "SELECT * FROM ?? WHERE ??=? ORDER BY date DESC";
-    var table = ["Comments","application",req.params.idApp];
+router.get("/:idApp/:limit",function(req,res){
+    var query = "SELECT * FROM ?? WHERE ??=? ORDER BY date DESC LIMIT ?";
+    var table = ["Comments","application",req.params.idApp, req.params.limit];
+    
     query = mysql.format(query,table);
     req.app.locals.connection.query(query,function(err,rows){
         if(err) {
