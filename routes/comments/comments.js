@@ -101,7 +101,7 @@ router.get("/:idApp",function(req,res){
     var query = "SELECT * FROM ?? WHERE ??=? ORDER BY date DESC";
     var table = ["Comments","application",req.params.idApp];
     query = mysql.format(query,table);
-    connection.query(query,function(err,rows){
+    req.app.locals.connection.query(query,function(err,rows){
         if(err) {
             res.json({"Error" : true, "Code" : 102});
         } else {
@@ -117,7 +117,7 @@ router.get("/new/:idApp",function(req,res){
         var query = "SELECT * FROM ?? WHERE ??=? ORDER BY date DESC";
     var table = ["Comments","application",req.params.idApp];
     query = mysql.format(query,table);
-    connection.query(query,function(err,rows){
+    req.app.locals.connection.query(query,function(err,rows){
         if(err) {
             res.json({"Error" : true, "Code" : 102});
         } else {
