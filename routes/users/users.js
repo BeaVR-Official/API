@@ -203,9 +203,7 @@ router.get("/:token", function(req, res){
  *
  */
 router.get("/applications/:token", function(req, res){
-
-    var secretKey = config.get('JSONWebTokens.secretKey');
-    var decoded = jwt.decode(req.params.token, secretKey);
+    var decoded = jwt.decode(req.params.token, process.env.jwtSecretKey);
     var query = "SELECT * FROM ?? WHERE ??=?";
     if (decoded != null) {
       var table = ["AllPurchasesInfos", "buyer", decoded.id];
