@@ -122,8 +122,8 @@ router.get("/state/:state", function(req, res){
 */
 router.get("/:idApplication", function(req, res){
 
-    var query = "SELECT * FROM ?? WHERE ??=?";
-    var table = ["AllApplicationsInfos", "id", req.params.idApplication];
+    var query = "SELECT * FROM `AllApplicationsInfos` WHERE ??=?";
+    var table = ["id", req.params.idApplication];
 
     query = mysql.format(query, table);
     req.app.locals.connection.query(query, function(err, rows){
