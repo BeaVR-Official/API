@@ -457,7 +457,7 @@ router.get("/getFeedbacks",function(req,res){
 router.get("/dashboardInfos/:token", function(req, res){
     var decoded = jwt.decode(req.params.token, process.env.jwtSecretKey);
     if (decoded != null) {
-        if (decoded.role == 'Administrateur') {
+        if (decoded.role == 'Administrator') {
             var query = "SELECT * FROM ??";
             var table = ["AllDashboardInfos"];
             query = mysql.format(query,table);
