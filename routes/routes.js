@@ -373,7 +373,7 @@ router.post("/sendFeedback",function(req,res){
  * @apiVersion 1.0.0
  * @apiName Récupérer la liste des retours sur le Store
  * @apiGroup Autres
- * @apiDescription Permet récupérer les différents retours sur le Store de la part des utilisateurs.
+ * @apiDescription Permet de récupérer les différents retours sur le Store de la part des utilisateurs.
  *
  *
  * @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
@@ -418,5 +418,63 @@ router.get("/getFeedbacks",function(req,res){
         }
     });
 });
+
+/**
+ * @api {get} /dashboardInfos/:token Récupérer les informations de base du dashboard (doit être administrateur)
+ * @apiVersion 1.0.0
+ * @apiName Récupérer les informations de base du dashboard
+ * @apiGroup Autres
+ * @apiDescription Permet de récupérer les informations de base à afficher sur le dashboard (nombre d'utilisateurs, etc.).
+ *
+ * @apiParam {String} token Token de l'utilisateur connecté
+ *
+ * @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
+ * @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
+ * @apiSuccess (Succès) {Object[]} DashboardInfos Liste des feedbacks
+ *
+ * @apiSuccessExample Succès - Réponse :
+ *     {
+  *       "Error": false,
+  *       "Code" : 1,
+  *       "DashboardInfos": {
+  *           "nbComments": 42,
+  *           "nbApplications": 42,
+  *           "nbPurchases": 42,
+  *           "nbFeedbacks": 42,
+  *         }
+  *     }
+ *
+ * @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
+ * @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête, 105 = L'utilisateur n'a pas les droits, 300 = Token incorrect)
+ *
+ * @apiErrorExample Erreur - Réponse :
+ *     {
+  *       "Error" : true,
+  *       "Code" : 102
+  *     }
+ *
+ */
+router.get("/dashboardInfos/:token", function(req, res){
+    var decoded = jwt.decode(req.params.token, process.env.jwtSecretKey);
+    if (decoded != null) {
+        if (decoded.role == 'Administrateur') {
+            var query = "SELECT * FROM ??";
+            var table = ["AllDashboardInfos"];
+            query = mysql.format(query,table);
+            req.app.locals.connection.query(query,function(err,rows){
+                if(err) {
+                    res.json({"Error" : true, "Code" : 102});
+                } else {
+                    res.json({"Error" : false, "Code" : 1, "DashboardInfos" : rows});
+                }
+            });
+        } else {
+            res.json({"Error" : true, "Code" : 105}); // L'utilisateur n'a pas les droits
+        }
+    }
+    else {
+      res.json({"Error" : true, "Code" : 300}); // Token incorrect
+    }
+})
 
 module.exports = router;
