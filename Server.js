@@ -2,7 +2,7 @@ var express = require("express");
 var mysql   = require("mysql");
 var bodyParser  = require("body-parser");
 
-// Require to get the right configuration file under /config
+// Required to get the right configuration file under /config
 process.env.NODE_ENV = "debug";
 
 var config = require('config');

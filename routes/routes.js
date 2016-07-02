@@ -430,7 +430,7 @@ router.get("/getFeedbacks",function(req,res){
  *
  * @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
  * @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
- * @apiSuccess (Succès) {Object[]} DashboardInfos Liste des feedbacks
+ * @apiSuccess (Succès) {Object} DashboardInfos Liste des feedbacks
  *
  * @apiSuccessExample Succès - Réponse :
  *     {
@@ -465,7 +465,7 @@ router.get("/dashboardInfos/:token", function(req, res){
                 if(err) {
                     res.json({"Error" : true, "Code" : 102});
                 } else {
-                    res.json({"Error" : false, "Code" : 1, "DashboardInfos" : rows});
+                    res.json({"Error" : false, "Code" : 1, "DashboardInfos" : rows[0]});
                 }
             });
         } else {

@@ -7,7 +7,6 @@ var express = require('express');
 var router = express.Router();
 var sha1 = require('sha1');
 var jwt = require('jsonwebtoken');
-var config = require('config');
 
 /**
  * @api {get} /users Liste des utilisateurs
