@@ -39,7 +39,7 @@ var expressjwt = require('express-jwt');
  */
 router.get("/", function(req, res, next){
     try {
-        res.json({
+        res.status(200).json({
             status : 200,
             message : "Welcome on BeaVR API."
         });
