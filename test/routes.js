@@ -11,7 +11,7 @@ describe('Routing', function() {
     var url = 'localhost:' + process.env.PORT || 3000;
 
     describe('Users', function() {
-        it('should return users list trying to access them', function(done) {
+        it('should return an error trying to access users without token', function(done) {
             request(url)
                 .get('/api/users')
                 // end handles the response
@@ -20,11 +20,11 @@ describe('Routing', function() {
                         throw err;
                         done();
                     }
-                    res.body.Error.should.equal(false);
+                    res.status.should.be.equal(401);
                     done();
                 });
         });
-        it('should return an error trying delete unexisting user', function(done) {
+        it('should return an error trying delete unexisting user without token', function(done) {
             request(url)
                 .delete('/api/users/2000003')
                 // end handles the response
@@ -33,7 +33,7 @@ describe('Routing', function() {
                         throw err;
                         done();
                     }
-                    res.body.Error.should.equal(false);
+                    res.status.should.be.equal(401);
                     done();
                 });
 
