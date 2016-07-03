@@ -7,6 +7,7 @@ var express = require('express');
 var router = express.Router();
 var sha1 = require('sha1');
 var jwt = require('jsonwebtoken');
+var expressjwt = require('express-jwt');
 
 /**
  * @api {get} /users Liste des utilisateurs
@@ -28,7 +29,6 @@ var jwt = require('jsonwebtoken');
   *           "idUser": 1,
   *           "email": "j.dujardin@gmail.com",
   *           "pseudo": "JeanJean",
-  *           "password": "a94a8fe5ccb19ba61c4c0873d391e9879ffa353a",
   *           "lastName": "Dujardin",
   *           "firstName": "Jean",
   *           "role": 4,
@@ -39,7 +39,7 @@ var jwt = require('jsonwebtoken');
   *     }
  *
  * @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
- * @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête)
+ * @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête, 105 = L'utilisateur n'a pas les droits)
  *
  * @apiErrorExample Erreur - Réponse :
  *     {
@@ -48,15 +48,22 @@ var jwt = require('jsonwebtoken');
   *     }
  *
  */
-router.get("/", function(req, res){
-    var query = "SELECT * FROM `Users`";
+router.get("/", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
+    if (req.user.role == 'Administrator') {
+        var query = "SELECT * FROM ??";
+        var table = ["AllUsersInfos"];
 
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-            res.json({"Error": false, "Code" : 1, "Users": rows}); // OK
-        else
-            res.json({"Error": true, "Code" : 102}); // Erreur
-    });
+        query = mysql.format(query, table);
+
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
+                res.json({"Error": false, "Code" : 1, "Users": rows}); // OK
+            else
+                res.json({"Error": true, "Code" : 102}); // Erreur
+        });
+    } else {
+        res.json({"Error": true, "Code" : 105}); // L'utilisateur n'a pas les droits
+    }
 });
 
 /**
@@ -80,7 +87,6 @@ router.get("/", function(req, res){
   *           "idUser": 1,
   *           "email": "j.dujardin@gmail.com",
   *           "pseudo": "JeanJean",
-  *           "password": "a94a8fe5ccb19ba61c4c0873d391e9879ffa353a",
   *           "lastName": "Dujardin",
   *           "firstName": "Jean",
   *           "role": 4,
@@ -89,7 +95,7 @@ router.get("/", function(req, res){
   *     }
  *
  * @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
- * @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête, 103 = L'utilisateur n'existe pas)
+ * @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête, 103 = L'utilisateur n'existe pas, 105 = L'utilisateur n'a pas les droits)
  *
  * @apiErrorExample Erreur - Réponse :
  *     {
@@ -99,78 +105,35 @@ router.get("/", function(req, res){
  *
  */
 
-router.get("/:idUser(\\d+)/", function(req, res){
+router.get("/:idUser(\\d+)/", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
+    if (req.user.role == 'Administrator') {
+        var query = "SELECT * FROM ?? WHERE ??=?";
+        var table = ["AllUsersInfos", "idUser", req.params.idUser];
 
-    var query = "SELECT * FROM ?? WHERE ??=?";
-    var table = ["Users", "idUser", req.params.idUser];
-
-    query = mysql.format(query, table);
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-        {
-            if (rows.length == 0)
-                res.json({"Error" : true, "Code" : 103}); // L'utilise n'existe pas
+        query = mysql.format(query, table);
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
+            {
+                if (rows.length == 0)
+                    res.json({"Error" : true, "Code" : 103}); // L'utilise n'existe pas
+                else
+                    res.json({"Error" : false, "Code" : 1, "Users" : rows[0]}); // OK
+            }
             else
-                res.json({"Error" : false, "Code" : 1, "Users" : rows[0]}); // OK
-        }
-        else
-            res.json({"Error" : true, "Code" : 102}); // Erreur
-    });
+                res.json({"Error" : true, "Code" : 102}); // Erreur
+        });
+    } else {
+        res.json({"Error": true, "Code" : 105}); // L'utilisateur n'a pas les droits
+    }
 });
 
 /**
- * @api {get} /users/:token Récupérer les informations stockées dans le token
+ * @api {get} /users/applications/ Récupérer les applications d'un utilisateur
  * @apiVersion 1.0.0
  * @apiName Informations d'un utilisateur
  * @apiGroup Gestion Utilisateurs
- * @apiDescription Retourne les informations stockées dans le token donné.
+ * @apiDescription Retourne les applications de l'utilisateur possédant le token passé en header.
  *
- * @apiParam {String} token Token de l'utilisateur connecté
- *
- * @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
- * @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
- * @apiSuccess (Succès) {Object} Users Informations de l'utilisateur
- *
- * @apiSuccessExample Succès - Réponse :
- *     {
-  *       "Error": false,
-  *       "Code" : 1,
-  *       "Users" : {
-  *           "id": 1,
-  *           "pseudo": "JeanJean",
-  *           "email": "j.dujardin@gmail.com",
-  *           "lastName": "Dujardin",
-  *           "firstName": "Jean",
-  *           "role": Users,
-  *           "profilePicture": "http://beavr.fr/media/jeandujardin.png"
-  *       }
-  *     }
- *
- * @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
- * @apiError (Erreur) {Number} Code Code d'erreur (300 = Token incorrect)
- *
- * @apiErrorExample Erreur - Réponse :
- *     {
-  *       "Error" : true,
-  *       "Code" : 102
-  *     }
- */
-router.get("/:token", function(req, res){
-    var decoded = jwt.decode(req.params.token, process.env.jwtSecretKey);
-    if (decoded != null)
-      res.json({"Error" : false, "Code" : 1, "Users" : decoded});
-    else
-      res.json({"Error" : true, "Code" : 300}); // Token incorrect
-});
-
-/**
- * @api {get} /users/applications/:token Récupérer les applications d'un utilisateur
- * @apiVersion 1.0.0
- * @apiName Informations d'un utilisateur
- * @apiGroup Gestion Utilisateurs
- * @apiDescription Retourne les applications de l'utilisateur possédant le token passé en paramètre.
- *
- * @apiParam {String} token Token de l'utilisateur connecté
  *
  * @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
  * @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
@@ -192,7 +155,7 @@ router.get("/:token", function(req, res){
   *     }
  *
  * @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
- * @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête, 103 = L'utilisateur n'existe pas, 300 = Token incorrect)
+ * @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête, 103 = L'utilisateur n'existe pas)
  *
  * @apiErrorExample Erreur - Réponse :
  *     {
@@ -201,26 +164,21 @@ router.get("/:token", function(req, res){
   *     }
  *
  */
-router.get("/applications/:token", function(req, res){
-    var decoded = jwt.decode(req.params.token, process.env.jwtSecretKey);
+router.get("/applications/", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
     var query = "SELECT * FROM ?? WHERE ??=?";
-    if (decoded != null) {
-      var table = ["AllPurchasesInfos", "buyer", decoded.id];
-      query = mysql.format(query, table);
-      req.app.locals.connection.query(query, function(err, rows){
-          if (!err)
-          {
-              if (rows.length == 0)
-                  res.json({"Error" : true, "Code" : 103}); // L'utilise n'existe pas
-              else
-                  res.json({"Error" : false, "Code" : 1, "Users" : rows}); // OK
-          }
-          else
-              res.json({"Error" : true, "Code" : 102}); // Erreur
-      });
-    }
-    else
-      res.json({"Error" : true, "Code" : 300}); // Token incorrect
+    var table = ["AllPurchasesInfos", "buyer", req.user.id];
+    query = mysql.format(query, table);
+    req.app.locals.connection.query(query, function(err, rows){
+        if (!err)
+        {
+            if (rows.length == 0)
+                res.json({"Error" : true, "Code" : 103}); // L'utilise n'existe pas
+            else
+                res.json({"Error" : false, "Code" : 1, "Users" : rows}); // OK
+        }
+        else
+            res.json({"Error" : true, "Code" : 102}); // Erreur
+    });
 }); 
 
 /**
@@ -242,7 +200,7 @@ router.get("/applications/:token", function(req, res){
   *     }
  *
  * @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
- * @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête, 103 = L'utilisateur n'existe pas)
+ * @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête, 103 = L'utilisateur n'existe pas, 105 = L'utilisateur n'a pas les droits)
  *
  * @apiErrorExample Erreur - Réponse :
  *     {
@@ -251,23 +209,26 @@ router.get("/applications/:token", function(req, res){
   *     }
  *
  */
-router.delete("/:idUser", function(req, res){
+router.delete("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
+    if (req.user.role == 'Administrator') {
+        var query = "DELETE FROM ?? WHERE ??=?";
+        var table = ["Users", "idUser", req.params.idUser];
 
-    var query = "DELETE FROM ?? WHERE ??=?";
-    var table = ["Users", "idUser", req.params.idUser];
-
-    query = mysql.format(query, table);
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-        {
-            if (rows.affectedRows == 1)
-                res.json({"Error" : false, "Code" : 1}); // OK
+        query = mysql.format(query, table);
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
+            {
+                if (rows.affectedRows == 1)
+                    res.json({"Error" : false, "Code" : 1}); // OK
+                else
+                    res.json({"Error" : false, "Code" : 103}); // L'utilisateur n'existe pas
+            }
             else
-                res.json({"Error" : false, "Code" : 103}); // L'utilisateur n'existe pas
-        }
-        else
-            res.json({"Error" : true, "Code" : 102}); // Erreur
-    });
+                res.json({"Error" : true, "Code" : 102}); // Erreur
+        });
+    } else {
+        res.json({"Error": true, "Code" : 105}); // L'utilisateur n'a pas les droits
+    }
 });
 
 /**
@@ -305,7 +266,7 @@ router.delete("/:idUser", function(req, res){
   *     }
  *
  * @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
- * @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête)
+ * @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête, 105 = L'utilisateur n'a pas les droits)
  *
  * @apiErrorExample Erreur - Réponse :
  *     {
@@ -314,36 +275,39 @@ router.delete("/:idUser", function(req, res){
   *     }
  *
  */
-router.put("/:idUser", function(req, res){
+router.put("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
+    if (req.user.role == 'Administrator') {
+        var query = "SELECT * FROM ?? WHERE ??=?";
+        var table = ["Users", "idUser", req.params.idUser];
 
-    var query = "SELECT * FROM ?? WHERE ??=?";
-    var table = ["Users", "idUser", req.params.idUser];
-
-    query = mysql.format(query, table);
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-        {
-            if (rows == 0)
-                res.json({"Error" : true, "Code" : 103}); // L'utilisateur n'existe pas
-            else
+        query = mysql.format(query, table);
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
             {
-                var query = "UPDATE Users SET `email`= ?,`pseudo`= ?, `password`= ?,`lastName`= ?,`firstName`= ?,`role`= ? WHERE `idUser` = ?";
-                var table = [req.body.email, req.body.pseudo, sha1(req.body.password), req.body.lastName, req.body.firstName, req.body.role, req.params.idUser];
+                if (rows == 0)
+                    res.json({"Error" : true, "Code" : 103}); // L'utilisateur n'existe pas
+                else
+                {
+                    var query = "UPDATE Users SET `email`= ?,`pseudo`= ?, `password`= ?,`lastName`= ?,`firstName`= ?,`role`= ? WHERE `idUser` = ?";
+                    var table = [req.body.email, req.body.pseudo, sha1(req.body.password), req.body.lastName, req.body.firstName, req.body.role, req.params.idUser];
 
-                query = mysql.format(query, table);
-                connection.query(query, function(err, rows){
-                    if (!err)
-                    {
-                        res.json({"Error" : false, "Code" : 1, "Users" : rows[0]}); // OK
-                    }
-                    else
-                        res.json({"Error" : true, "Code" : 102}); // Erreur
-                });
+                    query = mysql.format(query, table);
+                    connection.query(query, function(err, rows){
+                        if (!err)
+                        {
+                            res.json({"Error" : false, "Code" : 1, "Users" : rows[0]}); // OK
+                        }
+                        else
+                            res.json({"Error" : true, "Code" : 102}); // Erreur
+                    });
+                }
             }
-        }
-        else
-            res.json({"Error" : true, "Code" : 102}); // Erreur
-    });
+            else
+                res.json({"Error" : true, "Code" : 102}); // Erreur
+        });
+    } else {
+        res.json({"Error": true, "Code" : 105}); // L'utilisateur n'a pas les droits
+    }
 });
 
 /**
@@ -380,7 +344,6 @@ router.put("/:idUser", function(req, res){
  *
  */
 router.post("/", function(req,res){
-
     var query = "INSERT INTO ??(??,??,??,??,??,??) VALUES (?,?,?,?,?,?)";
     var table = ["Users", "email", "pseudo", "password", "lastName", "firstName", "role",
         req.body.email, req.body.pseudo, sha1(req.body.password), req.body.lastName, req.body.firstName, req.body.role];

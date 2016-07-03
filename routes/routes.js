@@ -19,6 +19,7 @@ var transporter = nodemailer.createTransport(smtpTransport({
           "pass"  : process.env.mailPassword
 }}));
 var jwt = require('jsonwebtoken');
+var expressjwt = require('express-jwt');
 
 /**
  * @api {get} / Réponse basique
@@ -420,13 +421,12 @@ router.get("/getFeedbacks",function(req,res){
 });
 
 /**
- * @api {get} /dashboardInfos/:token Récupérer les informations de base du dashboard (doit être administrateur)
+ * @api {get} /dashboardInfos/ Récupérer les informations de base du dashboard (doit être administrateur)
  * @apiVersion 1.0.0
  * @apiName Récupérer les informations de base du dashboard
  * @apiGroup Autres
  * @apiDescription Permet de récupérer les informations de base à afficher sur le dashboard (nombre d'utilisateurs, etc.).
  *
- * @apiParam {String} token Token de l'utilisateur connecté
  *
  * @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
  * @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
@@ -445,7 +445,7 @@ router.get("/getFeedbacks",function(req,res){
   *     }
  *
  * @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
- * @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête, 105 = L'utilisateur n'a pas les droits, 300 = Token incorrect)
+ * @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête, 105 = L'utilisateur n'a pas les droits)
  *
  * @apiErrorExample Erreur - Réponse :
  *     {
@@ -454,26 +454,20 @@ router.get("/getFeedbacks",function(req,res){
   *     }
  *
  */
-router.get("/dashboardInfos/:token", function(req, res){
-    var decoded = jwt.decode(req.params.token, process.env.jwtSecretKey);
-    if (decoded != null) {
-        if (decoded.role == 'Administrator') {
-            var query = "SELECT * FROM ??";
-            var table = ["AllDashboardInfos"];
-            query = mysql.format(query,table);
-            req.app.locals.connection.query(query,function(err,rows){
-                if(err) {
-                    res.json({"Error" : true, "Code" : 102});
-                } else {
-                    res.json({"Error" : false, "Code" : 1, "DashboardInfos" : rows[0]});
-                }
-            });
-        } else {
-            res.json({"Error" : true, "Code" : 105}); // L'utilisateur n'a pas les droits
-        }
-    }
-    else {
-      res.json({"Error" : true, "Code" : 300}); // Token incorrect
+router.get("/dashboardInfos/", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
+    if (req.user.role == 'Administrator') {
+        var query = "SELECT * FROM ??";
+        var table = ["AllDashboardInfos"];
+        query = mysql.format(query,table);
+        req.app.locals.connection.query(query,function(err,rows){
+            if(err) {
+                res.json({"Error" : true, "Code" : 102});
+            } else {
+                res.json({"Error" : false, "Code" : 1, "DashboardInfos" : rows[0]});
+            }
+        });
+    } else {
+        res.json({"Error" : true, "Code" : 105}); // L'utilisateur n'a pas les droits
     }
 })
 
