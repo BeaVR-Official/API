@@ -11,13 +11,13 @@ var config = require('config');
 var nodemailer = require('nodemailer');
 var smtpTransport = require('nodemailer-smtp-transport');
 var transporter = nodemailer.createTransport(smtpTransport({
-      "host"  : process.env.mailHost || "ssl0.ovh.net", // hostname
-      "secure": true,
-      "port"  : process.env.mailPort || 465, // port for secure SMTP
-      "auth"  : {
-          "user"  : process.env.mailUser,
-          "pass"  : process.env.mailPassword
-}}));
+    "host"  : process.env.mailHost || "ssl0.ovh.net", // hostname
+    "secure": true,
+    "port"  : process.env.mailPort || 465, // port for secure SMTP
+    "auth"  : {
+        "user"  : process.env.mailUser,
+        "pass"  : process.env.mailPassword
+    }}));
 var jwt = require('jsonwebtoken');
 var expressjwt = require('express-jwt');
 
@@ -37,11 +37,16 @@ var expressjwt = require('express-jwt');
   *       "Code" : 1
   *     }
  */
-router.get("/", function(req, res){
-    res.json({
-        "Message" : "Bienvenue sur l'API BeaVR.",
-        "Code" : 1
-    });
+router.get("/", function(req, res, next){
+    try {
+        res.json({
+            status : 200,
+            message : "Welcome on BeaVR API."
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -74,35 +79,43 @@ router.get("/", function(req, res){
   *     }
  *
  */
-router.post("/registration", function(req,res){
+router.post("/registration", function(req,res, next){
 
+
+    if (req.body.pseudo == undefined || req.body.email == undefined || req.body.password == undefined) {
+        return next(req.app.getError(100, "One or multiple field incorrect.", {}));
+    }
     var query = "INSERT INTO ?? (`pseudo`, `email`, `password`, `role`) VALUES (?, ?, ?, 4)";
     var table = ["Users", req.body.pseudo, req.body.email, sha1(req.body.password)];
+    try {
+        query = mysql.format(query,table);
 
-    query = mysql.format(query,table);
-
-    req.app.locals.connection.query(query, function(err,rows){
-        if (!err)
-            res.json({"Error" : false, "Code" : 1}); // OK
-        else
-        {
-            if (err.code == "ER_DUP_ENTRY")
-            {
-                var pattern = ".*Duplicate entry '.*' for key '(.*)'";
-                var matches = err.message.match(pattern);
-
-                if (matches != null)
-                {
-                    if (matches[1] == "pseudo")
-                        res.json({"Error" : true, "Code" : 104}); // Le pseudo est déjà utilisé
-                    if (matches[1] == "email")
-                        res.json({"Error" : true, "Code" : 101}); // L'email est déjà utilisé
-                }
-            }
+        req.app.locals.connection.query(query, function(err,rows){
+            if (!err)
+                res.status(200).json({status : 200, message : "OK", data: null }); // OK
             else
-                res.json({"Error" : true, "Code" : 100}); // Un des champs est mal renseigné
-        }
-    });
+            {
+                if (err.code == "ER_DUP_ENTRY")
+                {
+                    var pattern = ".*Duplicate entry '.*' for key '(.*)'";
+                    var matches = err.message.match(pattern);
+
+                    if (matches != null)
+                    {
+                        if (matches[1] == "pseudo")
+                            return next(req.app.getError(104, "Username already used.", null));
+                        if (matches[1] == "email")
+                            return next(req.app.getError(101, "Email already used.", null));
+                    }
+                }
+                else
+                    return next(req.app.getError(100, "One or multiple field incorrect.", {}));
+            }
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -145,53 +158,62 @@ router.post("/registration", function(req,res){
   *     }
  *
  */
-router.post("/connection", function(req,res){
+router.post("/connection", function(req,res, next){
 
     var query = "SELECT * FROM ?? WHERE ?? = ?";
+    if (req.body.email == undefined || req.body.password == undefined) {
+        return next(req.app.getError(100, "One or multiple field incorrect.", {}));
+    }
+
     var table = ["Users", "email", req.body.email];
 
-    query = mysql.format(query, table);
+    try {
+        query = mysql.format(query, table);
 
-    req.app.locals.connection.query(query, function(err, rows) {
-        if (!err)
-        {
-            if (rows == 0)
-                res.json({"Error" : true, "Code" : 103}) // L'utilisateur n'existe pas
-            else
+        req.app.locals.connection.query(query, function(err, rows) {
+            if (!err)
             {
-                var query = "SELECT * FROM ?? WHERE ?? = ? AND ?? = ?";
-                var table = ["Users", "email", req.body.email, "password", sha1(req.body.password)];
+                if (rows == 0)
+                    return next(req.app.getError(103, "User doesn't exist.", null));
+                else
+                {
+                    var query = "SELECT * FROM ?? WHERE ?? = ? AND ?? = ?";
+                    var table = ["Users", "email", req.body.email, "password", sha1(req.body.password)];
 
-                query = mysql.format(query, table);
+                    query = mysql.format(query, table);
 
-                req.app.locals.connection.query(query, function(err, rows) {
-                    if (!err)
-                    {
-                        if (rows.length == 0)
-                            res.json({"Error" : true, "Code" : 200}); // Mot de passe incorrect
-                        else {
-                            // L'utilisateur est authentifié
-                            var query = "SELECT * FROM ?? WHERE ?? = ?";
-                            var table = ["AllUsersInfos", "id", rows[0].idUser];
-                            query = mysql.format(query, table);
-                            req.app.locals.connection.query(query, function(err, rows) { // Dernière requête pour obtenir les infos importantes de l'user et les set dans le token
-                                if (!err) {
-                                    var token = jwt.sign(rows[0], process.env.jwtSecretKey);
-                                    res.json({"Error" : false, "Code" : 1, "Token" : token}); // OK
-                                }
-                                else
-                                    res.json({"Error" : true, "Code" : 102}); // Erreur
-                            })
+                    req.app.locals.connection.query(query, function(err, rows) {
+                        if (!err)
+                        {
+                            if (rows.length == 0)
+                                return next(req.app.getError(401, "Bad password.", null));
+                            else {
+                                // L'utilisateur est authentifié
+                                var query = "SELECT * FROM ?? WHERE ?? = ?";
+                                var table = ["AllUsersInfos", "id", rows[0].idUser];
+                                query = mysql.format(query, table);
+                                req.app.locals.connection.query(query, function(err, rows) { // Dernière requête pour obtenir les infos importantes de l'user et les set dans le token
+                                    if (!err) {
+                                        var token = jwt.sign(rows[0], process.env.jwtSecretKey);
+                                        res.status(200).json({status : 200, message : "User authenticated.", data: { token: token } });
+                                    }
+                                    else
+                                        return next(req.app.getError(500, "Error width database", err));
+                                });
+                            }
                         }
-                    }
-                    else
-                        res.json({"Error" : true, "Code" : 102}); // Erreur
-                })
+                        else
+                            return next(req.app.getError(500, "Error width database", err));
+                    });
+                }
             }
-        }
-        else
-            res.json({"Error" : true, "Code" : 102}); // Erreur
-    })
+            else
+                return next(req.app.getError(500, "Error width database", err));
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -222,24 +244,33 @@ router.post("/connection", function(req,res){
   *     }
  *
  */
-router.post("/email", function(req,res){
+router.post("/email", function(req,res, next){
+
+    if (req.body.email == undefined) {
+        return next(req.app.getError(400, "Bad request, missing required parameter.", null));
+    }
 
     var query = "SELECT * FROM ?? WHERE ?? = ?";
     var table = ["Users", "email", req.body.email];
 
-    query = mysql.format(query, table);
+    try {
+        query = mysql.format(query, table);
 
-    req.app.locals.connection.query(query, function(err, rows) {
-        if (!err)
-        {
-            if (rows == 0)
-                res.json({"Error" : true, "Code" : 103}) // N'existe pas
+        req.app.locals.connection.query(query, function(err, rows) {
+            if (!err)
+            {
+                if (rows == 0)
+                    return next(req.app.getError(404, "Entity not found.", null));
+                else
+                    res.status(200).json({status : 200, message : "Entity found.", data: { } });
+            }
             else
-                res.json({"Error" : false, "Code" : 1}); // Existe
-        }
-        else
-            res.json({"Error" : true, "Code" : 102});
-    })
+                return next(req.app.getError(500, "Error width database", err));
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -270,58 +301,65 @@ router.post("/email", function(req,res){
   *     }
  *
  */
-router.post("/reset-password", function(req,res){
+router.post("/reset-password", function(req,res, next){
 
+    if (req.body.email == undefined) {
+        return next(req.app.getError(400, "Bad request, missing required parameter.", null));
+    }
     var query = "SELECT * FROM ?? WHERE ?? = ?";
     var table = ["Users", "email", req.body.email];
 
-    query = mysql.format(query, table);
+    try {
+        query = mysql.format(query, table);
 
-    req.app.locals.connection.query(query, function(err, rows) {
-        if (err)
-            res.json({"Error" : true, "Code" : 102});
-        else
-        {
-            if (rows == 0)
-                res.json({"Error" : true, "Code" : 103})
+        req.app.locals.connection.query(query, function(err, rows) {
+            if (err)
+                return next(req.app.getError(500, "Internal error width database", err));
             else
             {
-                var query = "UPDATE ?? SET `password`= ? WHERE `email` = ?";
-                var password = randomstring.generate(8);
-                var table = ["Users", sha1(password), req.body.email];
+                if (rows == 0)
+                    return next(req.app.getError(404, "Entity not found.", null));
+                else
+                {
+                    var query = "UPDATE ?? SET `password`= ? WHERE `email` = ?";
+                    var password = randomstring.generate(8);
+                    var table = ["Users", sha1(password), req.body.email];
 
-                query = mysql.format(query, table);
-                req.app.locals.connection.query(query, function(err, rows) {
-                    if (err)
-                        res.json({"Error" : true, "Code" : 102});
-                    else
-                    {
-                        if (rows == 0)
-                            res.json({"Error" : true, "Code" : 103});
+                    query = mysql.format(query, table);
+                    req.app.locals.connection.query(query, function(err, rows) {
+                        if (err)
+                            return next(req.app.getError(500, "Internal error width database", err));
                         else
                         {
-                            var mailOptions = {
-                                from: config.get('NodeMailer.resetPasswordMailOptions.senderEmail'),
-                                to: req.body.email,
-                                subject: config.get('NodeMailer.resetPasswordMailOptions.emailSubject'),
-                                text: config.get('NodeMailer.resetPasswordMailOptions.emailBaseText') + password
-                            };
-                            transporter.sendMail(mailOptions, function(error, info) {
-                                if (error) {
-                                    res.json({"Error" : true, "Code" : 202})
-                                    console.log(error);
-                                }
-                                else
-                                    res.json({"Error" : false, "Code" : 1});
-                                console.log(info);
-                            })
-                            transporter.close();
+                            if (rows == 0)
+                                return next(req.app.getError(404, "Entity not found.", null));
+                            else
+                            {
+                                var mailOptions = {
+                                    from: config.get('NodeMailer.resetPasswordMailOptions.senderEmail'),
+                                    to: req.body.email,
+                                    subject: config.get('NodeMailer.resetPasswordMailOptions.emailSubject'),
+                                    text: config.get('NodeMailer.resetPasswordMailOptions.emailBaseText') + password
+                                };
+                                transporter.sendMail(mailOptions, function(error, info) {
+                                    if (error) {
+                                        return next(req.app.getError(500, "Internal error mail sender.", error));
+                                        console.log(error);
+                                    }
+                                    else
+                                        res.status(200).json({status : 200, message : "Password successfully reset.", data: { info: info } });
+                                });
+                                transporter.close();
+                            }
                         }
-                    }
-                })
+                    })
+                }
             }
-        }
-    })
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -355,18 +393,28 @@ router.post("/reset-password", function(req,res){
   *     }
  *
  */
-router.post("/sendFeedback",function(req,res){
+router.post("/sendFeedback",function(req,res, next){
+
+    if (req.body.idUser == undefined || req.body.object == undefined) {
+        return next(req.app.getError(400, "Bad request, missing required parameter.", null));
+    }
+
     var query = "INSERT INTO ??(??,??,??,??) VALUES (?,?,?,?)";
     var table = ["Feedbacks","user","object","description","recontact",req.body.idUser,req.body.object,req.body.description,req.body.recontact];
 
-    query = mysql.format(query,table);
-    req.app.locals.connection.query(query,function(err,rows){
-        if(err) {
-            res.json({"Error" : true, "Code" : 102});
-        } else {
-            res.json({"Error" : false, "Code" : 1});
-        }
-    });
+    try {
+        query = mysql.format(query,table);
+        req.app.locals.connection.query(query,function(err,rows){
+            if(err) {
+                return next(req.app.getError(500, "Internal error width database", err));
+            } else {
+                res.status(200).json({status : 200, message : "Feedback successfully sent.", data: {}});
+            }
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -407,17 +455,22 @@ router.post("/sendFeedback",function(req,res){
   *     }
  *
  */
-router.get("/getFeedbacks",function(req,res){
+router.get("/getFeedbacks",function(req,res, next){
     var query = "SELECT * FROM ??";
     var table = ["Feedbacks"];
-    query = mysql.format(query,table);
-    req.app.locals.connection.query(query,function(err,rows){
-        if(err) {
-            res.json({"Error" : true, "Code" : 102});
-        } else {
-            res.json({"Error" : false, "Code" : 1, "Feedbacks" : rows});
-        }
-    });
+    try {
+        query = mysql.format(query,table);
+        req.app.locals.connection.query(query,function(err,rows){
+            if(err) {
+                return next(req.app.getError(500, "Internal error width database", err));
+            } else {
+                res.status(200).json({status : 200, message : "OK", data: { Feedbacks: rows }});
+            }
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -454,21 +507,26 @@ router.get("/getFeedbacks",function(req,res){
   *     }
  *
  */
-router.get("/dashboardInfos/", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
-    if (req.user.role == 'Administrator') {
-        var query = "SELECT * FROM ??";
-        var table = ["AllDashboardInfos"];
-        query = mysql.format(query,table);
-        req.app.locals.connection.query(query,function(err,rows){
-            if(err) {
-                res.json({"Error" : true, "Code" : 102});
-            } else {
-                res.json({"Error" : false, "Code" : 1, "DashboardInfos" : rows[0]});
-            }
-        });
-    } else {
-        res.json({"Error" : true, "Code" : 105}); // L'utilisateur n'a pas les droits
+router.get("/dashboardInfos", expressjwt({secret: process.env.jwtSecretKey}), function(req, res, next){
+    try {
+        if (req.user.role == 'Administrator') {
+            var query = "SELECT * FROM ??";
+            var table = ["AllDashboardInfos"];
+            query = mysql.format(query,table);
+            req.app.locals.connection.query(query,function(err,rows) {
+                if (err) {
+                    return next(req.app.getError(500, "Internal error width database", err));
+                } else {
+                    res.status(200).json({status : 200, message : "OK", data: { DashboardInfos: rows[0] }});
+                }
+            });
+        } else {
+            return next(req.app.getError(401, "User needs privileges.", null));
+        }
     }
-})
+    catch (error) {
+        return next(error);
+    }
+});
 
 module.exports = router;

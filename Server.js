@@ -2,7 +2,7 @@ var express = require("express");
 var mysql   = require("mysql");
 var bodyParser  = require("body-parser");
 
-// Required to get the right configuration file under /config
+
 process.env.NODE_ENV = "debug";
 
 
@@ -27,6 +27,14 @@ app.use(function (req, res, next) {
     res.setHeader('Access-Control-Allow-Credentials', true);
     next();
 });
+
+app.getError = function(status,message, err) {
+    var error = new Error;
+    error.status = status;
+    error.message = message;
+    error.error = err;
+    return error;
+};
 
 function REST(){
     var self = this;
@@ -67,12 +75,50 @@ REST.prototype.configureExpress = function(connection) {
     app.use('/api/devices', devices);
     app.use('/api/categories', categories);
     app.use('/api/comments', comments);
+
+    app.get('*', function(req, res, next) {
+        var err = new Error();
+        err.status = 404;
+        err.message = "Not found.";
+        next(err);
+    });
+
+    app.post('*', function(req, res, next) {
+        var err = new Error();
+        err.status = 404;
+        err.message = "Not found.";
+        next(err);
+    });
+
+    app.put('*', function(req, res, next) {
+        var err = new Error();
+        err.status = 404;
+        err.message = "Not found.";
+        next(err);
+    });
+
+    app.delete('*', function(req, res, next) {
+        var err = new Error();
+        err.status = 404;
+        err.message = "Not found.";
+        next(err);
+    });
+
+    app.use(function(err, req, res, next) {
+        res.status = (err.status != undefined) ? err.status: 500;
+        res.json({
+            message: err.message,
+            error: err
+        });
+    });
+
     self.startServer();
 };
 
 REST.prototype.startServer = function() {
     app.listen(process.env.PORT || 3000,function(){
-        console.log("All right ! I'm using port 3000.");
+        var value = (process.env.PORT == undefined) ? 3000 : process.env.PORT;
+        console.log("All right ! I'm using port " + value  + ".");
     });
 };
 
