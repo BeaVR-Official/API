@@ -161,7 +161,7 @@ router.post("/hasCommented", function(req,res){
     query = mysql.format(query,table);
     req.app.locals.connection.query(query,function(err,rows){
         if(err) {
-            res.json({"Error" : true, "Code" : 102});
+            res.json({"Error" : true, "Code" : 102, "Test" : err});
         } else {
             if (rows.length == 0)
                 res.json({"Error" : true, "Code" : 103}); // N'existe pas
