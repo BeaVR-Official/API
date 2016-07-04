@@ -60,6 +60,150 @@ router.get("/", function(req, res){
     });
 });
 
+/**
+* @api {get} /states/ Liste des états
+* @apiVersion 1.0.0
+* @apiName Liste des applications
+* @apiGroup Gestion Applications
+* @apiDescription Retourne la liste de toutes les états d'application.
+*
+* @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
+* @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
+* @apiSuccess (Succès) {Object[]} States Liste des états
+*
+* @apiSuccessExample Succès - Réponse :
+*     {
+*       "Error": false,
+*       "Code" : 1,
+*       "States" : [
+*         {
+*           "id": "1",
+*           "state": "Validée",
+*         },
+*         ...
+*       ]
+*     }
+*
+* @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
+* @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête)
+*
+* @apiErrorExample Erreur - Réponse :
+*     {
+*       "Error" : true,
+*       "Code" : 102
+*     }
+*
+*/
+router.get("/states", function(req, res){
+    var query = "SELECT * FROM ??";
+    var table = ["States"];
+
+    query = mysql.format(query, table);
+    req.app.locals.connection.query(query, function(err, rows){
+        if (!err)
+            res.json({"Error" : false, "Code" : 1, "States" : rows}); // OK
+        else
+            res.json({"Error" : true, "Code" : 102}); // Erreur
+    });
+});
+
+/**
+* @api {get} /categories/ Liste des catégories
+* @apiVersion 1.0.0
+* @apiName Liste des applications
+* @apiGroup Gestion Applications
+* @apiDescription Retourne la liste de toutes les catégories d'application.
+*
+* @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
+* @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
+* @apiSuccess (Succès) {Object[]} States Liste des catégories
+*
+* @apiSuccessExample Succès - Réponse :
+*     {
+*       "Error": false,
+*       "Code" : 1,
+*       "States" : [
+*         {
+*           "idCategory": "1",
+*           "name": "Mathématique",
+*           "description": "Les chiffres vous parlent ?",
+            type: 2
+*         },
+*         ...
+*       ]
+*     }
+*
+* @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
+* @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête)
+*
+* @apiErrorExample Erreur - Réponse :
+*     {
+*       "Error" : true,
+*       "Code" : 102
+*     }
+*
+*/
+router.get("/categories", function(req, res){
+    var query = "SELECT * FROM ??";
+    var table = ["Categories"];
+
+    query = mysql.format(query, table);
+    req.app.locals.connection.query(query, function(err, rows){
+        if (!err)
+            res.json({"Error" : false, "Code" : 1, "Categories" : rows}); // OK
+        else
+            res.json({"Error" : true, "Code" : 102}); // Erreur
+    });
+});
+
+/**
+* @api {get} /devices/ Liste des devices
+* @apiVersion 1.0.0
+* @apiName Liste des applications
+* @apiGroup Gestion Applications
+* @apiDescription Retourne la liste de toutes les devices d'application.
+*
+* @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
+* @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
+* @apiSuccess (Succès) {Object[]} Devices Liste des devices
+*
+* @apiSuccessExample Succès - Réponse :
+*     {
+*       "Error": false,
+*       "Code" : 1,
+*       "States" : [
+*         {
+*           "idDevice": "1",
+*           "name": "LeapMotion",
+*           "image": "masuperleap.jpg"
+*         },
+*         ...
+*       ]
+*     }
+*
+* @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
+* @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête)
+*
+* @apiErrorExample Erreur - Réponse :
+*     {
+*       "Error" : true,
+*       "Code" : 102
+*     }
+*
+*/
+router.get("/devices", function(req, res){
+    var query = "SELECT * FROM ??";
+    var table = ["Devices"];
+
+    query = mysql.format(query, table);
+    req.app.locals.connection.query(query, function(err, rows){
+        if (!err)
+            res.json({"Error" : false, "Code" : 1, "Devices" : rows}); // OK
+        else
+            res.json({"Error" : true, "Code" : 102}); // Erreur
+    });
+});
+
 router.get("/state/:state", function(req, res){
 
     var query = "SELECT * FROM `AllApplicationsInfos` WHERE ??=?";
