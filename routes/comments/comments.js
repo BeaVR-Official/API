@@ -166,7 +166,7 @@ router.post("/hasCommented", function(req,res){
             if (rows.length == 0)
                 res.json({"Error" : true, "Code" : 103}); // N'existe pas
             else
-                res.json({"Error" : false, "Code" : 1, "Comments" : rows}); // OK
+                res.json({"Error" : false, "Code" : 1, "Comment" : rows[0]}); // OK
         }
     });
 });
