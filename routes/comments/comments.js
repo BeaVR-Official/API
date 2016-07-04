@@ -57,9 +57,8 @@ router.post("/:idApp",function(req,res){
 
 router.put("/:idComment", function(req, res){
 
-    var query = "UPDATE ?? SET ?? = ?, ?? = ?, ?? = ?, ?? = ? WHERE ?? = ?";
-    var table = ["Comments", "title", req.body.title, "comment", req.body.comment, "rating", req.body.rating,
-    "date", (new Date ((new Date((new Date(new Date())).toISOString() )).getTime() - ((new Date()).getTimezoneOffset()*60000))).toISOString().slice(0, 19).replace('T', ' '), "idComment", req.params.idComment];
+    var query = "UPDATE ?? SET ?? = ?, ?? = ?, ?? = ? WHERE ?? = ?";
+    var table = ["Comments", "title", req.body.title, "comment", req.body.comment, "rating", req.body.rating, "idComment", req.params.idComment];
 
     query = mysql.format(query, table);
     req.app.locals.connection.query(query, function(err, rows){
