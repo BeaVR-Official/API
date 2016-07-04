@@ -8,6 +8,61 @@ var router = express.Router();
 var sha1 = require('sha1');
 
 /**
+* @api {get} /comments/ Liste des commentaires
+* @apiVersion 1.0.0
+* @apiName Liste des commentaires
+* @apiGroup Gestion Commentaires
+* @apiDescription Retourne la liste de toutes les commentaires.
+*
+* @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
+* @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
+* @apiSuccess (Succès) {Object[]} Comments Liste des commentaires
+*
+* @apiSuccessExample Succès - Réponse :
+*     {
+*       "Error": false,
+*       "Code" : 1,
+*       "Comments" : [
+*         {
+*           "id": 1,
+*           "comment": "lorem impsu",
+*           "rating": "5",
+*           "author": Jean Dujardin,
+*           "application": "1",
+*           "applicationName" : "Superbe app"
+*           "date": "2016-04-15 03:48:32",
+*           "title": "j'adore",
+*           "pseudo": "JeanDu",
+*           "email": "jeandujardin@gmail.com"
+*         },
+*         ...
+*       ]
+*     }
+*
+* @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
+* @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête)
+*
+* @apiErrorExample Erreur - Réponse :
+*     {
+*       "Error" : true,
+*       "Code" : 102
+*     }
+*
+*/
+router.get("/", function(req, res){
+    var query = "SELECT * FROM ??";
+    var table = ["AllCommentsInfos"];
+
+    query = mysql.format(query, table);
+    req.app.locals.connection.query(query, function(err, rows){
+        if (!err)
+            res.json({"Error": false, "Code" : 1, "Comments": rows}); // OK
+        else
+            res.json({"Error": true, "Code" : 102}); // Erreur
+    });
+});
+
+/**
 * @api {post} /comments Publier un commentaire
 * @apiVersion 1.0.0
 * @apiName Publier un commentaire
