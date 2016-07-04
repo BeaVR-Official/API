@@ -48,21 +48,26 @@ var expressjwt = require('express-jwt');
   *     }
  *
  */
-router.get("/", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
-    if (req.user.role == 'Administrator') {
-        var query = "SELECT * FROM ??";
-        var table = ["AllUsersInfos"];
+router.get("/", expressjwt({secret: process.env.jwtSecretKey}), function(req, res, next){
+    try {
+        if (req.user.role == 'Administrator') {
+            var query = "SELECT * FROM ??";
+            var table = ["AllUsersInfos"];
 
-        query = mysql.format(query, table);
+            query = mysql.format(query, table);
 
-        req.app.locals.connection.query(query, function(err, rows){
-            if (!err)
-                res.json({"Error": false, "Code" : 1, "Users": rows}); // OK
-            else
-                res.json({"Error": true, "Code" : 102}); // Erreur
-        });
-    } else {
-        res.json({"Error": true, "Code" : 105}); // L'utilisateur n'a pas les droits
+            req.app.locals.connection.query(query, function(err, rows){
+                if (!err)
+                    res.status(200).json({status : 200, message : "OK", data: { Users: rows }});
+                else
+                    return next(req.app.getError(500, "Internal error width database", err));
+            });
+        } else {
+            return next(req.app.getError(403, "Forbidden : user needs privileges.", null));
+        }
+    }
+    catch (error) {
+        return next(error);
     }
 });
 
@@ -105,25 +110,30 @@ router.get("/", expressjwt({secret: process.env.jwtSecretKey}), function(req, re
  *
  */
 
-router.get("/:idUser(\\d+)/", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
-    if (req.user.role == 'Administrator') {
-        var query = "SELECT * FROM ?? WHERE ??=?";
-        var table = ["AllUsersInfos", "idUser", req.params.idUser];
+router.get("/:idUser(\\d+)/", expressjwt({secret: process.env.jwtSecretKey}), function(req, res, next){
+    try {
+        if (req.user.role == 'Administrator') {
+            var query = "SELECT * FROM ?? WHERE ??=?";
+            var table = ["AllUsersInfos", "idUser", req.params.idUser];
 
-        query = mysql.format(query, table);
-        req.app.locals.connection.query(query, function(err, rows){
-            if (!err)
-            {
-                if (rows.length == 0)
-                    res.json({"Error" : true, "Code" : 103}); // L'utilise n'existe pas
+            query = mysql.format(query, table);
+            req.app.locals.connection.query(query, function(err, rows){
+                if (!err)
+                {
+                    if (rows.length == 0)
+                        return next(req.app.getError(404, "User not found", null)); // <---- Should be modified
+                    else
+                        res.status(200).json({status : 200, message : "OK", data: { Users: rows[0] }});
+                }
                 else
-                    res.json({"Error" : false, "Code" : 1, "Users" : rows[0]}); // OK
-            }
-            else
-                res.json({"Error" : true, "Code" : 102}); // Erreur
-        });
-    } else {
-        res.json({"Error": true, "Code" : 105}); // L'utilisateur n'a pas les droits
+                    return next(req.app.getError(500, "Internal error width database", err));
+            });
+        } else {
+            return next(req.app.getError(403, "Forbidden : user needs privileges.", null));
+        }
+    }
+    catch (error) {
+        return next(error);
     }
 });
 
@@ -164,21 +174,25 @@ router.get("/:idUser(\\d+)/", expressjwt({secret: process.env.jwtSecretKey}), fu
   *     }
  *
  */
-router.get("/applications/", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
-    var query = "SELECT * FROM ?? WHERE ??=?";
-    var table = ["AllPurchasesInfos", "buyer", req.user.id];
-    query = mysql.format(query, table);
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-        {
-            if (rows.length == 0)
-                res.json({"Error" : true, "Code" : 103}); // L'utilise n'existe pas
+router.get("/applications/", expressjwt({secret: process.env.jwtSecretKey}), function(req, res, next){
+    try {
+        var query = "SELECT * FROM ?? WHERE ??=?";
+        var table = ["AllPurchasesInfos", "buyer", req.user.id];
+        query = mysql.format(query, table);
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err) {
+                if (rows.length == 0)
+                    return next(req.app.getError(404, "User not found", null)); // <---- Should be modified
+                else
+                    res.status(200).json({status: 200, message: "OK", data: {Users: rows}});
+            }
             else
-                res.json({"Error" : false, "Code" : 1, "Users" : rows}); // OK
-        }
-        else
-            res.json({"Error" : true, "Code" : 102}); // Erreur
-    });
+                return next(req.app.getError(500, "Internal error width database", err));
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 }); 
 
 /**
@@ -209,25 +223,30 @@ router.get("/applications/", expressjwt({secret: process.env.jwtSecretKey}), fun
   *     }
  *
  */
-router.delete("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
-    if (req.user.role == 'Administrator') {
-        var query = "DELETE FROM ?? WHERE ??=?";
-        var table = ["Users", "idUser", req.params.idUser];
+router.delete("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(req, res, next){
+    try {
+        if (req.user.role == 'Administrator') {
+            var query = "DELETE FROM ?? WHERE ??=?";
+            var table = ["Users", "idUser", req.params.idUser];
 
-        query = mysql.format(query, table);
-        req.app.locals.connection.query(query, function(err, rows){
-            if (!err)
-            {
-                if (rows.affectedRows == 1)
-                    res.json({"Error" : false, "Code" : 1}); // OK
+            query = mysql.format(query, table);
+            req.app.locals.connection.query(query, function(err, rows){
+                if (!err)
+                {
+                    if (rows.affectedRows == 1)
+                        res.status(200).json({status: 200, message: "OK", data: {}});
+                    else
+                        return next(req.app.getError(404, "User not found", null));
+                }
                 else
-                    res.json({"Error" : false, "Code" : 103}); // L'utilisateur n'existe pas
-            }
-            else
-                res.json({"Error" : true, "Code" : 102}); // Erreur
-        });
-    } else {
-        res.json({"Error": true, "Code" : 105}); // L'utilisateur n'a pas les droits
+                    return next(req.app.getError(500, "Internal error width database", err));
+            });
+        } else {
+            return next(req.app.getError(403, "Forbidden : user needs privileges.", null));
+        }
+    }
+    catch (error) {
+        return next(error);
     }
 });
 
@@ -275,38 +294,42 @@ router.delete("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), functi
   *     }
  *
  */
-router.put("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
-    if (req.user.role == 'Administrator') {
-        var query = "SELECT * FROM ?? WHERE ??=?";
-        var table = ["Users", "idUser", req.params.idUser];
+router.put("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(req, res, next){
+    try {
+        if (req.user.role == 'Administrator') {
+            var query = "SELECT * FROM ?? WHERE ??=?";
+            var table = ["Users", "idUser", req.params.idUser];
 
-        query = mysql.format(query, table);
-        req.app.locals.connection.query(query, function(err, rows){
-            if (!err)
-            {
-                if (rows == 0)
-                    res.json({"Error" : true, "Code" : 103}); // L'utilisateur n'existe pas
-                else
+            query = mysql.format(query, table);
+            req.app.locals.connection.query(query, function(err, rows){
+                if (!err)
                 {
-                    var query = "UPDATE Users SET `email`= ?,`pseudo`= ?, `password`= ?,`lastName`= ?,`firstName`= ?,`role`= ? WHERE `idUser` = ?";
-                    var table = [req.body.email, req.body.pseudo, sha1(req.body.password), req.body.lastName, req.body.firstName, req.body.role, req.params.idUser];
+                    if (rows == 0)
+                        return next(req.app.getError(404, "User not found", null)); // <---- Should be modified
+                    else
+                    {
+                        var query = "UPDATE Users SET `email`= ?,`pseudo`= ?, `password`= ?,`lastName`= ?,`firstName`= ?,`role`= ? WHERE `idUser` = ?";
+                        var table = [req.body.email, req.body.pseudo, sha1(req.body.password), req.body.lastName, req.body.firstName, req.body.role, req.params.idUser];
 
-                    query = mysql.format(query, table);
-                    connection.query(query, function(err, rows){
-                        if (!err)
-                        {
-                            res.json({"Error" : false, "Code" : 1, "Users" : rows[0]}); // OK
-                        }
-                        else
-                            res.json({"Error" : true, "Code" : 102}); // Erreur
-                    });
+                        query = mysql.format(query, table);
+                        req.app.locals.connection.query(query, function(err, rows){
+                            if (!err) {
+                                res.status(200).json({status: 200, message: "OK", data: { Users : rows[0]}});
+                            }
+                            else
+                                return next(req.app.getError(500, "Internal error width database", err));
+                        });
+                    }
                 }
-            }
-            else
-                res.json({"Error" : true, "Code" : 102}); // Erreur
-        });
-    } else {
-        res.json({"Error": true, "Code" : 105}); // L'utilisateur n'a pas les droits
+                else
+                    return next(req.app.getError(500, "Internal error width database", err));
+            });
+        } else {
+            return next(req.app.getError(403, "Forbidden : user needs privileges.", null));
+        }
+    }
+    catch (error) {
+        return next(error);
     }
 });
 
@@ -343,23 +366,28 @@ router.put("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(
   *     }
  *
  */
-router.post("/", function(req,res){
-    var query = "INSERT INTO ??(??,??,??,??,??,??) VALUES (?,?,?,?,?,?)";
-    var table = ["Users", "email", "pseudo", "password", "lastName", "firstName", "role",
-        req.body.email, req.body.pseudo, sha1(req.body.password), req.body.lastName, req.body.firstName, req.body.role];
+router.post("/", function(req,res, next){
+    try {
+        var query = "INSERT INTO ??(??,??,??,??,??,??) VALUES (?,?,?,?,?,?)";
+        var table = ["Users", "email", "pseudo", "password", "lastName", "firstName", "role",
+            req.body.email, req.body.pseudo, sha1(req.body.password), req.body.lastName, req.body.firstName, req.body.role];
 
-    query = mysql.format(query,table);
+        query = mysql.format(query,table);
 
-    req.app.locals.connection.query(query,function(err,rows){
-        if (!err)
-            res.json({"Error" : false, "Code" : 1}); // OK
-        else {
-            if (err.code == "ER_DUP_ENTRY")
-                res.json({"Error" : true, "Code" : 101}); // L'utilisateur existe déjà
-            else
-                res.json({"Error" : true, "Code" : 102}); // Erreur
-        }
-    });
+        req.app.locals.connection.query(query,function(err,rows){
+            if (!err)
+                res.status(200).json({status: 200, message: "OK", data: { }});
+            else {
+                if (err.code == "ER_DUP_ENTRY")
+                    return next(req.app.getError(409, "Conflict: user already exist", null));
+                else
+                    return next(req.app.getError(400, "Bad request", null));
+            }
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
 module.exports = router;

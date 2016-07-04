@@ -2,7 +2,6 @@ var express = require("express");
 var mysql   = require("mysql");
 var bodyParser  = require("body-parser");
 
-
 process.env.NODE_ENV = "debug";
 
 
@@ -35,6 +34,7 @@ app.getError = function(status,message, err) {
     error.error = err;
     return error;
 };
+
 
 function REST(){
     var self = this;

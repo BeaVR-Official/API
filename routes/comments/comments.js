@@ -40,19 +40,24 @@ var sha1 = require('sha1');
     *     }
 *
 */
-router.post("/:idApp",function(req,res){
-    var query = "INSERT INTO ??(??,??,??,??,??,??) VALUES (?,?,?,?,?,?)";
-    var table = ["Comments","title", "comment","rating","author","application","date",
-        req.body.title, req.body.comment, req.body.rating, req.body.author, req.body.application,
-        (new Date ((new Date((new Date(new Date())).toISOString() )).getTime() - ((new Date()).getTimezoneOffset()*60000))).toISOString().slice(0, 19).replace('T', ' ')];
-    query = mysql.format(query,table);
-    connection.query(query,function(err,rows){
-        if(err) {
-            res.json({"Error" : true, "Code" : 102});
-        } else {
-            res.json({"Error" : false, "Code" : 1});
-        }
-    });
+router.post("/:idApp",function(req,res, next){
+    try {
+        var query = "INSERT INTO ??(??,??,??,??,??,??) VALUES (?,?,?,?,?,?)";
+        var table = ["Comments","title", "comment","rating","author","application","date",
+            req.body.title, req.body.comment, req.body.rating, req.body.author, req.body.application,
+            (new Date ((new Date((new Date(new Date())).toISOString() )).getTime() - ((new Date()).getTimezoneOffset()*60000))).toISOString().slice(0, 19).replace('T', ' ')];
+        query = mysql.format(query,table);
+        req.app.locals.connection.query(query,function(err,rows){
+            if(err) {
+                return next(req.app.getError(500, "Internal error width database", err));
+            } else {
+                res.status(200).json({status: 200, message: "OK", data: {}});
+            }
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -98,32 +103,43 @@ router.post("/:idApp",function(req,res){
 *
 */
 
-router.get("/:idApp",function(req,res){
-    var query = "SELECT * FROM `AllCommentsInfos` WHERE ??=? ORDER BY date DESC";
-    var table = ["application",req.params.idApp];
-    
-    query = mysql.format(query,table);
-    req.app.locals.connection.query(query,function(err,rows){
-        if(err) {
-            res.json({"Error" : true, "Code" : 102});
-        } else {
-            res.json({"Error" : false, "Code" : 1, "Comments" : rows});
-        }
-    });
+router.get("/:idApp",function(req,res, next){
+    try {
+        var query = "SELECT * FROM `AllCommentsInfos` WHERE ??=? ORDER BY date DESC";
+        var table = ["application",req.params.idApp];
+
+        query = mysql.format(query,table);
+        req.app.locals.connection.query(query,function(err,rows){
+            if(err) {
+                return next(req.app.getError(500, "Internal error width database", err));
+            } else {
+                res.status(200).json({status: 200, message: "OK", data: {Comments: rows}});
+            }
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
-router.get("/:idApp/:limit",function(req,res){
-    var query = "SELECT * FROM `AllCommentsInfos` WHERE ??=? ORDER BY date DESC LIMIT ?";
-    var table = ["application",req.params.idApp, parseInt(req.params.limit)];
-    
-    query = mysql.format(query,table);
-    req.app.locals.connection.query(query,function(err,rows){
-        if(err) {
-            res.json({"Error" : true, "Code" : 102});
-        } else {
-            res.json({"Error" : false, "Code" : 1, "Comments" : rows});
-        }
-    });
+router.get("/:idApp/:limit",function(req,res, next){
+    try {
+        var query = "SELECT * FROM `AllCommentsInfos` WHERE ??=? ORDER BY date DESC LIMIT ?";
+        var table = ["application",req.params.idApp, parseInt(req.params.limit)];
+
+        query = mysql.format(query,table);
+        req.app.locals.connection.query(query,function(err,rows){
+            if(err) {
+                return next(req.app.getError(500, "Internal error width database", err));
+            } else {
+                res.json({"Error" : false, "Code" : 1, "Comments" : rows});
+            }
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
+
 });
 
 /**
@@ -155,20 +171,25 @@ router.get("/:idApp/:limit",function(req,res){
     *     }
 *
 */
-router.post("/hasCommented", function(req,res){
-    var query = "SELECT * FROM ?? WHERE ??=? AND ??=?";
-    var table = ["Comments","application",req.body.idApplication,"author",req.body.idAuthor];
-    query = mysql.format(query,table);
-    connection.query(query,function(err,rows){
-        if(err) {
-            res.json({"Error" : true, "Code" : 102});
-        } else {
-            if (rows.length == 0)
-                res.json({"Error" : true, "Code" : 103}); // N'existe pas
-            else
-                res.json({"Error" : false, "Code" : 1, "Comments" : rows}); // OK
-        }
-    });
+router.post("/hasCommented", function(req,res, next){
+    try {
+        var query = "SELECT * FROM ?? WHERE ??=? AND ??=?";
+        var table = ["Comments","application",req.body.idApplication,"author",req.body.idAuthor];
+        query = mysql.format(query,table);
+        req.app.locals.connection.query(query,function(err,rows){
+            if(err) {
+                return next(req.app.getError(500, "Internal error width database", err));
+            } else {
+                if (rows.length == 0)
+                    return next(req.app.getError(404, "Entity not found", null)); // <----- Should be modified
+                else
+                    res.status(200).json({status: 200, message: "OK", data: {Comments: rows}});
+            }
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -199,17 +220,22 @@ router.post("/hasCommented", function(req,res){
     *     }
 *
 */
-router.delete("/:idApp/:idComment",function(req,res){
-    var query = "DELETE from ?? WHERE ??=?";
-    var table = ["Comments","idComment",req.params.idComment];
-    query = mysql.format(query,table);
-    connection.query(query,function(err,rows){
-        if(err) {
-            res.json({"Error" : true, "Code" : 102});
-        } else {
-            res.json({"Error" : false, "Code" : 1});
-        }
-    });
+router.delete("/:idApp/:idComment",function(req,res, next){
+    try {
+        var query = "DELETE from ?? WHERE ??=?";
+        var table = ["Comments","idComment",req.params.idComment];
+        query = mysql.format(query,table);
+        req.app.locals.connection.query(query,function(err,rows){
+            if(err) {
+                return next(req.app.getError(500, "Internal error width database", err));
+            } else {
+                res.status(200).json({status: 200, message: "OK", data: {}});
+            }
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
 module.exports = router;

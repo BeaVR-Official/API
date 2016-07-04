@@ -47,15 +47,20 @@ var sha1 = require('sha1');
     *     }
 *
 */
-router.get("/", function(req, res){
-    var query = "SELECT * FROM `Devices`";
+router.get("/", function(req, res, next){
+    try {
+        var query = "SELECT * FROM `Devices`";
 
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-            res.json({"Error": false, "Code" : 1, "Devices": rows}); // OK
-        else
-            res.json({"Error": true, "Code" : 102}); // Erreur
-    });
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
+                res.status(200).json({status: 200, message: "OK", data: { Devices : rows}});
+            else
+                return next(req.app.getError(500, "Internal error width database", err));
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -92,23 +97,28 @@ router.get("/", function(req, res){
     *     }
 *
 */
-router.get("/:idDevice", function(req, res){
+router.get("/:idDevice", function(req, res, next){
+    try {
+        var query = "SELECT * FROM Devices WHERE ??=?";
+        var table = ["idDevice", req.params.idDevice];
 
-    var query = "SELECT * FROM Devices WHERE ??=?";
-    var table = ["idDevice", req.params.idDevice];
-
-    query = mysql.format(query, table);
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-        {
-            if (rows.length == 0)
-                res.json({"Error" : true, "Code" : 103}); // N'existe pas
+        query = mysql.format(query, table);
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
+            {
+                if (rows.length == 0)
+                    return next(req.app.getError(404, "Device not found", null));
+                else
+                    res.status(200).json({status: 200, message: "OK", data: { Device : rows[0]}});
+            }
             else
-                res.json({"Error" : false, "Code" : 1, "Device" : rows[0]}); // OK
-        }
-        else
-            res.json({"Error" : true, "Code" : 102}); // Erreur
-    });
+                return next(req.app.getError(500, "Internal error width database", err));
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
+
 });
 
 /**
@@ -140,19 +150,23 @@ router.get("/:idDevice", function(req, res){
     *     }
 *
 */
-router.post("/", function(req,res){
+router.post("/", function(req,res, next){
+    try {
+        var query = "INSERT INTO ?? (??, ??) VALUES (?,?)";
+        var table = ["Devices", "name", "image", req.body.name, req.body.image];
 
-    var query = "INSERT INTO ?? (??, ??) VALUES (?,?)";
-    var table = ["Devices", "name", "image", req.body.name, req.body.image];
+        query = mysql.format(query,table);
 
-    query = mysql.format(query,table);
-
-    req.app.locals.connection.query(query,function(err,rows){
-        if (!err)
-            res.json({"Error" : false, "Code" : 1});
-        else
-            res.json({"Error" : true, "Code" : 102});
-    });
+        req.app.locals.connection.query(query,function(err,rows){
+            if (!err)
+                res.status(200).json({status: 200, message: "OK", data: { }});
+            else
+                return next(req.app.getError(500, "Internal error width database", err));
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -183,23 +197,28 @@ router.post("/", function(req,res){
     *     }
 *
 */
-router.delete("/:idDevice", function(req, res){
+router.delete("/:idDevice", function(req, res, next){
+    try {
+        var query = "DELETE FROM ?? WHERE ??=?";
+        var table = ["Devices", "idDevice", req.params.idDevice];
 
-    var query = "DELETE FROM ?? WHERE ??=?";
-    var table = ["Devices", "idDevice", req.params.idDevice];
-
-    query = mysql.format(query, table);
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-        {
-            if (rows.affectedRows == 1)
-                res.json({"Error" : false, "Code" : 1}); // OK
+        query = mysql.format(query, table);
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
+            {
+                if (rows.affectedRows == 1)
+                    res.status(200).json({status: 200, message: "OK", data: {}});
+                else
+                    return next(req.app.getError(404, "Device not found", null));
+            }
             else
-                res.json({"Error" : true, "Code" : 103}); // N'existe pas
-        }
-        else
-            res.json({"Error" : true, "Code" : 102}); // Error
-    });
+                return next(req.app.getError(500, "Internal error width database", err));
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
+
 });
 
 /**
@@ -232,18 +251,22 @@ router.delete("/:idDevice", function(req, res){
     *     }
 *
 */
-router.put("/:idDevice", function(req, res){
+router.put("/:idDevice", function(req, res, next){
+    try {
+        var query = "UPDATE ?? SET ?? = ?, ?? = ? WHERE ?? = ?";
+        var table = ["Devices", "name", req.body.name, "image", req.body.image, "idDevice", req.params.idDevice];
 
-    var query = "UPDATE ?? SET ?? = ?, ?? = ? WHERE ?? = ?";
-    var table = ["Devices", "name", req.body.name, "image", req.body.image, "idDevice", req.params.idDevice];
-
-    query = mysql.format(query, table);
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-            res.json({"Error" : false, "Code" : 1}); // OK
-        else
-            res.json({"Error" : true, "Code" : 102}); // Error
-    });
+        query = mysql.format(query, table);
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
+                res.status(200).json({status: 200, message: "OK", data: {}});
+            else
+                return next(req.app.getError(500, "Internal error width database", err));
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
 module.exports = router;

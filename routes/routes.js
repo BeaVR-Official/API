@@ -174,7 +174,7 @@ router.post("/connection", function(req,res, next){
             if (!err)
             {
                 if (rows == 0)
-                    return next(req.app.getError(103, "User doesn't exist.", null));
+                    return next(req.app.getError(401, "User doesn't exist.", null)); // <---- Should be modified
                 else
                 {
                     var query = "SELECT * FROM ?? WHERE ?? = ? AND ?? = ?";
@@ -260,7 +260,7 @@ router.post("/email", function(req,res, next){
             if (!err)
             {
                 if (rows == 0)
-                    return next(req.app.getError(404, "Entity not found.", null));
+                    return next(req.app.getError(404, "Entity not found.", null)); // <---- Should be modified
                 else
                     res.status(200).json({status : 200, message : "Entity found.", data: { } });
             }

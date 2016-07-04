@@ -49,35 +49,43 @@ var sha1 = require('sha1');
 *     }
 *
 */
-router.get("/", function(req, res){
-    var query = "SELECT * FROM `AllApplicationsInfos`";
+router.get("/", function(req, res, next){
+    try {
+        var query = "SELECT * FROM `AllApplicationsInfos`";
 
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-            res.json({"Error": false, "Code" : 1, "Applications": rows}); // OK
-        else
-            res.json({"Error": true, "Code" : 102}); // Erreur
-    });
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
+                res.status(200).json({status: 200, message: "OK", data: {Applications: rows}});
+            else
+                return next(req.app.getError(500, "Internal error width database", err));
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
-router.get("/state/:state", function(req, res){
+router.get("/state/:state", function(req, res, next){
+    try {
+        var query = "SELECT * FROM `AllApplicationsInfos` WHERE ??=?";
+        var table = ["state", req.params.state];
 
-    var query = "SELECT * FROM `AllApplicationsInfos` WHERE ??=?";
-    var table = ["state", req.params.state];
-
-    query = mysql.format(query, table);
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-        {
-            if (rows.length == 0)
-                res.json({"Error" : true, "Code" : 103}); // N'existe pas
-            else {
-                res.json({"Error" : false, "Code" : 1, "Applications" : rows}); // OK
+        query = mysql.format(query, table);
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
+            {
+                if (rows.length == 0)
+                    return next(req.app.getError(404, "State not found", null)); // <---- Should be modified
+                else {
+                    res.status(200).json({status: 200, message: "OK", data: {Applications: rows}});
+                }
             }
-        }
-        else
-            res.json({"Error" : true, "Code" : 102}); // Erreur
-    });
+            else
+                return next(req.app.getError(500, "Internal error width database", err));
+        });
+    } catch (error) {
+        return next(error);
+    }
 });
 
 
@@ -120,24 +128,27 @@ router.get("/state/:state", function(req, res){
 *       "Code" : 102
 *     }
 */
-router.get("/:idApplication", function(req, res){
+router.get("/:idApplication", function(req, res, next){
+    try {
+        var query = "SELECT * FROM `AllApplicationsInfos` WHERE ??=?";
+        var table = ["id", req.params.idApplication];
 
-    var query = "SELECT * FROM `AllApplicationsInfos` WHERE ??=?";
-    var table = ["id", req.params.idApplication];
-
-    query = mysql.format(query, table);
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-        {
-            if (rows.length == 0)
-                res.json({"Error" : true, "Code" : 103}); // N'existe pas
-            else {
-                res.json({"Error" : false, "Code" : 1, "Applications" : rows[0]}); // OK
+        query = mysql.format(query, table);
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
+            {
+                if (rows.length == 0)
+                    return next(req.app.getError(404, "Application not found", null));
+                else {
+                    res.status(200).json({status: 200, message: "OK", data: {Applications: rows[0]}});
+                }
             }
-        }
-        else
-            res.json({"Error" : true, "Code" : 102}); // Erreur
-    });
+            else
+                return next(req.app.getError(500, "Internal error width database", err));
+        });
+    } catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -168,24 +179,27 @@ router.get("/:idApplication", function(req, res){
     *     }
 *
 */
-router.delete("/:idApplication", function(req, res){
+router.delete("/:idApplication", function(req, res, next) {
+    try {
+        var query = "DELETE FROM ?? WHERE ??=?";
+        var table = ["Applications", "idApplication", req.params.idApplication];
 
-    var query = "DELETE FROM ?? WHERE ??=?";
-    var table = ["Applications", "idApplication", req.params.idApplication];
-
-    query = mysql.format(query, table);
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-        {
-            if (rows.affectedRows == 1)
-                res.json({"Error" : false, "Code" : 1}); // OK
-            else {
-                res.json({"Error" : true, "Code" : 103}); // N'existe pas
+        query = mysql.format(query, table);
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
+            {
+                if (rows.affectedRows == 1)
+                    res.status(200).json({status: 200, message: "OK", data: {}});
+                else {
+                    return next(req.app.getError(404, "Application not found", null));
+                }
             }
-        }
-        else
-            res.json({"Error" : true, "Code" : 102}); // Erreur
-    });
+            else
+                return next(req.app.getError(500, "Internal error width database", err));
+        });
+    } catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -223,21 +237,24 @@ router.delete("/:idApplication", function(req, res){
 *     }
 *
 */
-router.post("/", function(req,res){
+router.post("/", function(req,res, next) {
+    try {
+        var query = "INSERT INTO ??(??, ??, ??, ??, ??, ??, ??, ??) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        var table = ["Applications", "name", "description", "creationDate", "price", "creator", "url", "state", "logo",
+            req.body.name, req.body.description, (new Date ((new Date((new Date(new Date())).toISOString() )).getTime() - ((new Date()).getTimezoneOffset()*60000))).toISOString().slice(0, 19).replace('T', ' '),
+            req.body.price, req.body.creator, req.body.url, req.body.state, req.body.logo];
 
-    var query = "INSERT INTO ??(??, ??, ??, ??, ??, ??, ??, ??) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-    var table = ["Applications", "name", "description", "creationDate", "price", "creator", "url", "state", "logo",
-        req.body.name, req.body.description, (new Date ((new Date((new Date(new Date())).toISOString() )).getTime() - ((new Date()).getTimezoneOffset()*60000))).toISOString().slice(0, 19).replace('T', ' '),
-        req.body.price, req.body.creator, req.body.url, req.body.state, req.body.logo];
+        query = mysql.format(query,table);
 
-    query = mysql.format(query,table);
-
-    req.app.locals.connection.query(query, function(err,rows){
-        if (!err)
-            res.json({"Error" : false, "Code" : 1}); // OK
-        else
-            res.json({"Error" : true, "Code" : 102}); // Erreur
-    });
+        req.app.locals.connection.query(query, function(err,rows){
+            if (!err)
+                res.status(200).json({status: 200, message: "OK", data: {}});
+            else
+                return next(req.app.getError(500, "Internal error width database", err));
+        });
+    } catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -272,23 +289,26 @@ router.post("/", function(req,res){
 *     }
 *
 */
-router.get("/:idApplication/progressions", function(req, res){
+router.get("/:idApplication/progressions", function(req, res, next) {
+    try {
+        var query = "SELECT * FROM ?? WHERE ??=?";
+        var table = ["Progressions", "application", req.params.idApplication];
 
-    var query = "SELECT * FROM ?? WHERE ??=?";
-    var table = ["Progressions", "application", req.params.idApplication];
-
-    query = mysql.format(query, table);
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-        {
-            if (rows.length == 0)
-                res.json({"Error" : true, "Code" : 201}); // Aucune progression
+        query = mysql.format(query, table);
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
+            {
+                if (rows.length == 0)
+                    return next(req.app.getError(404, "Progression not found", null)); // <---- Should be modified
+                else
+                    res.status(200).json({status: 200, message: "OK", data: {Progression: rows}});
+            }
             else
-                res.json({"Error" : false, "Code" : 1, "Progression" : rows}); // OK
-        }
-        else
-            res.json({"Error" : true, "Code" : 102}); // Erreur
-    });
+                return next(req.app.getError(500, "Internal error width database", err));
+        });
+    } catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -321,18 +341,21 @@ router.get("/:idApplication/progressions", function(req, res){
     *     }
 *
 */
-router.put("/:idApplication/progressions", function(req, res){
+router.put("/:idApplication/progressions", function(req, res, next){
+    try {
+        var query = "UPDATE ?? SET ?? = ? WHERE ?? = ?";
+        var table = ["Progressions", "hashProgression" , req.body.hashProgression, "application", req.params.idApplication];
 
-    var query = "UPDATE ?? SET ?? = ? WHERE ?? = ?";
-    var table = ["Progressions", "hashProgression" , req.body.hashProgression, "application", req.params.idApplication];
-
-    query = mysql.format(query, table);
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-            res.json({"Error" : false, "Code" : 1}); // OK
-        else
-            res.json({"Error" : true, "Code" : 102}); // Erreur
-    });
+        query = mysql.format(query, table);
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
+                res.status(200).json({status: 200, message: "OK", data: {}});
+            else
+                return next(req.app.getError(500, "Internal error width database", err));
+        });
+    } catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -361,17 +384,21 @@ router.put("/:idApplication/progressions", function(req, res){
 *     }
 *
 */
-router.post("/:idApplication/validateApplicationSubmission",function(req,res){
-    var query = "UPDATE ?? SET ?? = ? WHERE ?? = ?";
-    var table = ["Applications","state","1","idApplication",req.params.idApplication];
-    query = mysql.format(query,table);
-    req.app.locals.connection.query(query,function(err,rows){
-        if(err) {
-            res.json({"Error" : true, "Code" : 102});
-        } else {
-            res.json({"Error" : false, "Code" : 1});
-        }
-    });
+router.post("/:idApplication/validateApplicationSubmission",function(req,res, next) {
+    try {
+        var query = "UPDATE ?? SET ?? = ? WHERE ?? = ?";
+        var table = ["Applications","state","1","idApplication",req.params.idApplication];
+        query = mysql.format(query,table);
+        req.app.locals.connection.query(query,function(err,rows){
+            if(err) {
+                return next(req.app.getError(500, "Internal error width database", err));
+            } else {
+                res.status(200).json({status: 200, message: "OK", data: {}});
+            }
+        });
+    } catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -408,23 +435,27 @@ router.post("/:idApplication/validateApplicationSubmission",function(req,res){
 *     }
 *
 */
-router.put("/:idApplication",function(req,res){
-    var query = "UPDATE ?? SET ?? = ?, ?? = ?, ?? = ?, ?? = ?, ?? = ?, ?? = ? WHERE ?? = ?";
-    var table = ["applications","name",req.body.name,
-        "description",req.body.description,
-        "price",req.body.price,
-        "headdevice",req.body.headdevice,
-        "handsdevice",req.body.handsdevice,
-        "category",req.body.category,
-        "idApplication",req.params.idApplication];
-    query = mysql.format(query,table);
-    req.app.locals.connection.query(query,function(err,rows){
-        if(err) {
-            res.json({"Error" : true, "Code" : 102});
-        } else {
-            res.json({"Error" : false, "Code" : 1});
-        }
-    });
+router.put("/:idApplication",function(req,res, next) {
+    try {
+        var query = "UPDATE ?? SET ?? = ?, ?? = ?, ?? = ?, ?? = ?, ?? = ?, ?? = ? WHERE ?? = ?";
+        var table = ["applications","name",req.body.name,
+            "description",req.body.description,
+            "price",req.body.price,
+            "headdevice",req.body.headdevice,
+            "handsdevice",req.body.handsdevice,
+            "category",req.body.category,
+            "idApplication",req.params.idApplication];
+        query = mysql.format(query,table);
+        req.app.locals.connection.query(query,function(err,rows){
+            if(err) {
+                return next(req.app.getError(500, "Internal error width database", err));
+            } else {
+                res.status(200).json({status: 200, message: "OK", data: {}});
+            }
+        });
+    } catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -463,19 +494,23 @@ router.put("/:idApplication",function(req,res){
     *     }
 *
 */
-router.post("/",function(req,res){
-    var query = "INSERT INTO ??(??,??,??,??,??,??,??,??,??,??) VALUES (?,?,?,?,?,?,?,?,?,?)";
-    var table = ["applications","name","description","creationdate","price","headdevice","handsdevice","state","author","category","url",
-        req.body.name,req.body.description,req.body.creationdate,req.body.price,req.body.headdevice,req.body.handsdevice,"1",req.body.author,
-        req.body.category,req.body.appUrl];
-    query = mysql.format(query,table);
-    req.app.locals.connection.query(query,function(err,rows){
-        if(err) {
-            res.json({"Error" : true, "Code" : 102});
-        } else {
-            res.json({"Error" : false, "Code" : 1});
-        }
-    });
+router.post("/",function(req,res, next) {
+    try {
+        var query = "INSERT INTO ??(??,??,??,??,??,??,??,??,??,??) VALUES (?,?,?,?,?,?,?,?,?,?)";
+        var table = ["applications","name","description","creationdate","price","headdevice","handsdevice","state","author","category","url",
+            req.body.name,req.body.description,req.body.creationdate,req.body.price,req.body.headdevice,req.body.handsdevice,"1",req.body.author,
+            req.body.category,req.body.appUrl];
+        query = mysql.format(query,table);
+        req.app.locals.connection.query(query,function(err,rows){
+            if(err) {
+                return next(req.app.getError(500, "Internal error width database", err));
+            } else {
+                res.status(200).json({status: 200, message: "OK", data: {}});
+            }
+        });
+    } catch (error) {
+        return next(error);
+    }
 });
 
 module.exports = router;

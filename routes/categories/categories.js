@@ -45,15 +45,20 @@ var sha1 = require('sha1');
     *     }
 *
 */
-router.get("/categoryTypes", function(req, res){
-    var query = "SELECT * FROM `CategoryTypes`";
+router.get("/categoryTypes", function(req, res, next){
+    try {
+        var query = "SELECT * FROM `CategoryTypes`";
 
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-            res.json({"Error": false, "Code" : 1, "Categories": rows}); // OK
-        else
-            res.json({"Error": true, "Code" : 102}); // Error
-    });
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
+                res.status(200).json({status: 200, message: "OK", data: {Categories:rows}});
+            else
+                return next(req.app.getError(500, "Internal error width database", err));
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -84,19 +89,23 @@ router.get("/categoryTypes", function(req, res){
     *     }
 *
 */
-router.post("/categoryTypes", function(req,res){
+router.post("/categoryTypes", function(req,res, next){
+    try {
+        var query = "INSERT INTO `CategoryTypes` (`description`) VALUES (?)";
+        var table = [req.body.description];
 
-    var query = "INSERT INTO `CategoryTypes` (`description`) VALUES (?)";
-    var table = [req.body.description];
+        query = mysql.format(query,table);
 
-    query = mysql.format(query,table);
-
-    req.app.locals.connection.query(query,function(err,rows){
-        if (!err)
-            res.json({"Error" : false, "Code" : 1}); // OK
-        else
-            res.json({"Error" : true, "Code" : 102}); // Error
-    });
+        req.app.locals.connection.query(query,function(err,rows){
+            if (!err)
+                res.status(200).json({status: 200, message: "OK", data: {}});
+            else
+                return next(req.app.getError(500, "Internal error width database", err));
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -141,15 +150,20 @@ router.post("/categoryTypes", function(req,res){
     *     }
 *
 */
-router.get("/", function(req, res){
-    var query = "SELECT * FROM `Categories`";
+router.get("/", function(req, res, next){
+    try {
+        var query = "SELECT * FROM `Categories`";
 
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-            res.json({"Error": false, "Code" : 1, "Categories": rows}); // OK
-        else
-            res.json({"Error": true, "Code" : 102}); // Error
-    });
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
+                res.status(200).json({status: 200, message: "OK", data: {Categories: rows}});
+            else
+                return next(req.app.getError(500, "Internal error width database", err));
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -196,22 +210,26 @@ router.get("/", function(req, res){
     *     }
 *
 */
-router.get("/:idType", function(req, res){
-
-    var query = "SELECT * FROM `Categories` WHERE ??=?";
-    var table = ["type", req.params.idType];
-    query = mysql.format(query, table);
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-        {
-            if (rows.length == 0)
-                res.json({"Error" : true, "Code" : 103}); // N'existe pas
+router.get("/:idType", function(req, res, next){
+    try {
+        var query = "SELECT * FROM `Categories` WHERE ??=?";
+        var table = ["type", req.params.idType];
+        query = mysql.format(query, table);
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
+            {
+                if (rows.length == 0)
+                    return next(req.app.getError(404, "Category not found", null)); // <---- Should be modified
+                else
+                    res.status(200).json({status: 200, message: "OK", data: {Categories: rows}});
+            }
             else
-                res.json({"Error" : false, "Code" : 1, "Categories" : rows}); // OK
-        }
-        else
-            res.json({"Error" : true, "Code" : 102}); // Erreur
-    });
+                return next(req.app.getError(500, "Internal error width database", err));
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
 /**
@@ -246,15 +264,20 @@ router.get("/:idType", function(req, res){
     *     }
 *
 */
-router.get("/categorytypesanddevices", function(req, res){
-    var query = "SELECT * FROM `AllCategoryTypesAndDevices`";
+router.get("/categorytypesanddevices", function(req, res, next){
+    try {
+        var query = "SELECT * FROM `AllCategoryTypesAndDevices`";
 
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-            res.json({"Error": false, "Code" : 1, "CategoryTypesAndDevices": rows[0]}); // OK
-        else
-            res.json({"Error": true, "Code" : 102}); // Erreur
-    });
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
+                res.status(200).json({status: 200, message: "OK", data: {CategoryTypesAndDevices: rows[0]}});
+            else
+                return next(req.app.getError(500, "Internal error width database", err));
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
 });
 
 module.exports = router;
