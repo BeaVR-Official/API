@@ -46,7 +46,7 @@ router.post("/:idApp",function(req,res){
         req.body.title, req.body.comment, req.body.rating, req.body.author, req.body.application,
         (new Date ((new Date((new Date(new Date())).toISOString() )).getTime() - ((new Date()).getTimezoneOffset()*60000))).toISOString().slice(0, 19).replace('T', ' ')];
     query = mysql.format(query,table);
-    connection.query(query,function(err,rows){
+    req.app.locals.connection.query(query,function(err,rows){
         if(err) {
             res.json({"Error" : true, "Code" : 102});
         } else {
@@ -159,7 +159,7 @@ router.post("/hasCommented", function(req,res){
     var query = "SELECT * FROM ?? WHERE ??=? AND ??=?";
     var table = ["Comments","application",req.body.idApplication,"author",req.body.idAuthor];
     query = mysql.format(query,table);
-    connection.query(query,function(err,rows){
+    req.app.locals.connection.query(query,function(err,rows){
         if(err) {
             res.json({"Error" : true, "Code" : 102});
         } else {
@@ -203,7 +203,7 @@ router.delete("/:idApp/:idComment",function(req,res){
     var query = "DELETE from ?? WHERE ??=?";
     var table = ["Comments","idComment",req.params.idComment];
     query = mysql.format(query,table);
-    connection.query(query,function(err,rows){
+    req.app.locals.connection.query(query,function(err,rows){
         if(err) {
             res.json({"Error" : true, "Code" : 102});
         } else {
