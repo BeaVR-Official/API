@@ -155,9 +155,9 @@ router.get("/:idApp/:limit",function(req,res){
     *     }
 *
 */
-router.post("/hasCommented", function(req,res){
+router.post("/hasCommented/:idApp", function(req,res){
     var query = "SELECT * FROM ?? WHERE ??=? AND ??=?";
-    var table = ["Comments","application",req.body.idApplication,"author",req.body.idAuthor];
+    var table = ["Comments","application",req.params.idApp,"author",req.body.idAuthor];
     query = mysql.format(query,table);
     req.app.locals.connection.query(query,function(err,rows){
         if(err) {
