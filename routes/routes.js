@@ -578,7 +578,7 @@ router.get("/getFeedbacks", expressjwt({secret: process.env.jwtSecretKey}), func
  *
  */
 
-router.get("/dashboardInfos", function(req, res, next){
+router.get("/dashboardInfos", expressjwt({secret: process.env.jwtSecretKey}), function(req, res, next){
 
 
     if (req.user.id == "" || req.user.id == undefined)

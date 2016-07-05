@@ -4,17 +4,7 @@ var bodyParser  = require("body-parser");
 var mongoose = require("mongoose");
 var fs = require('fs');
 
-process.env.dbConnectionLimit = 100000;
-process.env.dbHost = '5.196.88.52';
-process.env.dbName = 'beavr_new';
-process.env.dbPassword = 'pictartheboss';
-process.env.dbPort = 3306;
-process.env.dbUsername = 'pictar';
-process.env.mailHost = 'ssl0.ovh.net';
-process.env.mailPassword = 'epitech2017';
-process.env.mailPort = 465;
-process.env.mailUser = 'contact@beavr.fr';
-process.env.jwtSecretKey = 'XSVgtQ\;>1!\,z`\,xDA*zMzs|#\$Iku-`P(l9p.u/1IO][#wKs\cXS\ElxM~P{pw4J';
+
 process.env.NODE_ENV = "debug";
 
 
