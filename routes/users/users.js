@@ -109,7 +109,7 @@ router.get("/", expressjwt({secret: process.env.jwtSecretKey}), function(req, re
   *     }
  *
  */
-
+// modifier avec length = 0
 router.get("/:idUser(\\d+)/", expressjwt({secret: process.env.jwtSecretKey}), function(req, res, next){
     try {
         if (req.user.role == 'Administrator') {
@@ -174,6 +174,8 @@ router.get("/:idUser(\\d+)/", expressjwt({secret: process.env.jwtSecretKey}), fu
   *     }
  *
  */
+
+// /users/:idUser/applications
 router.get("/applications/", expressjwt({secret: process.env.jwtSecretKey}), function(req, res, next){
     try {
         var query = "SELECT * FROM ?? WHERE ??=?";

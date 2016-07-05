@@ -1,7 +1,20 @@
 var express = require("express");
 var mysql   = require("mysql");
 var bodyParser  = require("body-parser");
+var mongoose = require("mongoose");
+var fs = require('fs');
 
+process.env.dbConnectionLimit = 100000;
+process.env.dbHost = '5.196.88.52';
+process.env.dbName = 'beavr_new';
+process.env.dbPassword = 'pictartheboss';
+process.env.dbPort = 3306;
+process.env.dbUsername = 'pictar';
+process.env.mailHost = 'ssl0.ovh.net';
+process.env.mailPassword = 'epitech2017';
+process.env.mailPort = 465;
+process.env.mailUser = 'contact@beavr.fr';
+process.env.jwtSecretKey = 'XSVgtQ\;>1!\,z`\,xDA*zMzs|#\$Iku-`P(l9p.u/1IO][#wKs\cXS\ElxM~P{pw4J';
 process.env.NODE_ENV = "debug";
 
 
@@ -14,10 +27,14 @@ var applications = require('./routes/applications/applications');
 var devices = require('./routes/devices/devices');
 var categories = require('./routes/categories/categories');
 var comments = require('./routes/comments/comments');
+var mongo_express = require('mongo-express/lib/middleware');
+var mongo_express_config = require('./node_modules/mongo-express/config');
+
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(bodyParser.json());
+app.use('/mongo_express', mongo_express(mongo_express_config));
 
 app.use(function (req, res, next) {
     res.setHeader('Access-Control-Allow-Origin', 'http://localhost');
@@ -27,14 +44,21 @@ app.use(function (req, res, next) {
     next();
 });
 
+mongoose.connect('mongodb://127.0.0.1/beavr');
+
+app.set('mongoose', mongoose);
+
 app.getError = function(status,message, err) {
     var error = new Error;
-    error.status = status;
     error.message = message;
+    error.status = status;
     error.error = err;
     return error;
 };
 
+fs.readdirSync(__dirname + '/models').forEach(function(filename) {
+   if (~filename.indexOf('.js')) require(__dirname + '/models/' + filename);
+});
 
 function REST(){
     var self = this;
@@ -78,29 +102,29 @@ REST.prototype.configureExpress = function(connection) {
 
     app.get('*', function(req, res, next) {
         var err = new Error();
-        err.status = 404;
         err.message = "Not found.";
+        err.status = 404;
         next(err);
     });
 
     app.post('*', function(req, res, next) {
         var err = new Error();
-        err.status = 404;
         err.message = "Not found.";
+        err.status = 404;
         next(err);
     });
 
     app.put('*', function(req, res, next) {
         var err = new Error();
-        err.status = 404;
         err.message = "Not found.";
+        err.status = 404;
         next(err);
     });
 
     app.delete('*', function(req, res, next) {
         var err = new Error();
-        err.status = 404;
         err.message = "Not found.";
+        err.status = 404;
         next(err);
     });
 

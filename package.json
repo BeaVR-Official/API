@@ -13,14 +13,18 @@
     "express-jwt": "^3.4.0",
     "form-data": "^1.0.0-rc3",
     "jsonwebtoken": "^7.0.1",
+    "mongoose": "^4.5.3",
     "mysql": "~2.5.5",
     "nodemailer": "^2.4.2",
     "randomstring": "^1.1.5",
     "sha1": "~1.1.1 "
   },
   "devDependencies": {
+    "crypto-js": "^3.1.6",
     "mocha": "^2.5.3",
+    "mongo-express": "^0.30.59",
     "nodemailer": "^2.4.2",
+    "nodemon": "^1.9.2",
     "randomstring": "^1.1.5",
     "sha1": "^1.1.1",
     "should": "^9.0.2",
