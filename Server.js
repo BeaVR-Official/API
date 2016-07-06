@@ -4,7 +4,6 @@ var bodyParser  = require("body-parser");
 var mongoose = require("mongoose");
 var fs = require('fs');
 
-
 process.env.NODE_ENV = "debug";
 
 
@@ -24,7 +23,7 @@ var mongo_express_config = require('./node_modules/mongo-express/config');
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(bodyParser.json());
-app.use('/mongo_express', mongo_express(mongo_express_config));
+app.use('/admin', mongo_express(mongo_express_config));
 
 app.use(function (req, res, next) {
     res.setHeader('Access-Control-Allow-Origin', 'http://localhost');
@@ -119,8 +118,7 @@ REST.prototype.configureExpress = function(connection) {
     });
 
     app.use(function(err, req, res, next) {
-        res.status = (err.status != undefined) ? err.status: 500;
-        res.json({
+        res.status(parseInt((err.status != undefined) ? err.status: 500)).json({
             message: err.message,
             error: err
         });

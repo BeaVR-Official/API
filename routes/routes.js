@@ -10,10 +10,10 @@ var config = require('config');
 var nodemailer = require('nodemailer');
 var smtpTransport = require('nodemailer-smtp-transport');
 var transporter = nodemailer.createTransport(smtpTransport({
-    "host"  : process.env.mailHost || "ssl0.ovh.net", // hostname
-    "secure": true,
-    "port"  : process.env.mailPort || 465, // port for secure SMTP
-    "auth"  : {
+    "host"      : process.env.mailHost || "ssl0.ovh.net", // hostname
+    "secure"    : true,
+    "port"      : process.env.mailPort || 465, // port for secure SMTP
+    "auth"      : {
         "user"  : process.env.mailUser,
         "pass"  : process.env.mailPassword
     }}));
@@ -42,7 +42,7 @@ var Feedbacks = require("../models/feedback");
 router.get("/", function(req, res, next){
     try {
         res.status(200).json({
-            status : 200,
+            status  : 200,
             message : "Welcome on BeaVR API."
         });
     }  catch (error) {
@@ -81,25 +81,7 @@ router.get("/", function(req, res, next){
  *
  */
 router.post("/registration", function(req,res, next) {
-    if (req.body.pseudo == undefined || req.body.email == undefined || req.body.password == undefined) {
-        return next(req.app.getError(404, "One or multiple field incorrect.", {}));
-    }
-    try {
-        var newUser = new Users({
-            username : req.body.pseudo,
-            password : CryptoJS.SHA256(req.body.password).toString(),
-            email : req.body.email,
-            admin : false
-        });
-        newUser.save(function(err) {
-            if (err) {
-                return next(err);
-            }
-            res.status(200).json({status : 200, message : "OK", data: null }); // OK
-        });
-    }  catch (error) {
-        return next(error);
-    }
+    return next(req.app.getError(404, "Request deprecated. See POST /api/users", {}));
 });
 
 /**
@@ -149,10 +131,16 @@ router.post("/connection", function(req,res, next){
     try {
         Users.findOne({ 'email': req.body.email, password: CryptoJS.SHA256(req.body.password).toString()}, function(err, user) {
             if (err) return next(err);
-            else if (user == null) return next(req.app.getError(401, "Authentication failed.", null));
+            else if (user == null || user == undefined) return next(req.app.getError(401, "Authentication failed.", null));
             else {
                 var token = jwt.sign({id : user._id}, process.env.jwtSecretKey);
-                res.status(200).json({status : 200, message : "User authenticated.", data: { token: token } });
+                res.status(200).json({
+                    status      : 200,
+                    message     : "User authenticated.",
+                    data        : {
+                        token   : token
+                    }
+                });
             }
         });
     } catch (error) {
@@ -302,24 +290,24 @@ router.post("/reset-password", function(req,res, next){
     try {
         User.findOne({email : req.body.email}, function(error, user) {
             if (err) return next(err);
-            else if (user == null) return next(req.app.getError(404, "User not found.", null));
+            else if (user == null || user == undefined) return next(req.app.getError(404, "User not found.", null));
             else {
                 var password = randomstring.generate(8);
                 user.password = CryptoJS.SHA256(password).toString();
                 user.save();
                 var mailOptions = {
-                    from: config.get('NodeMailer.resetPasswordMailOptions.senderEmail'),
-                    to: user.email,
-                    subject: config.get('NodeMailer.resetPasswordMailOptions.emailSubject'),
-                    text: config.get('NodeMailer.resetPasswordMailOptions.emailBaseText') + password
+                    from    : config.get('NodeMailer.resetPasswordMailOptions.senderEmail'),
+                    to      : user.email,
+                    subject : config.get('NodeMailer.resetPasswordMailOptions.emailSubject'),
+                    text    : config.get('NodeMailer.resetPasswordMailOptions.emailBaseText') + password
                 };
                 transporter.sendMail(mailOptions, function(error, info) {
                     if (error) return next(req.app.getError(500, "Internal error mail sender.", error));
                     else
                         res.status(200).json({
-                            status : 200,
+                            status  : 200,
                             message : "Password successfully reset.",
-                            data: {
+                            data    : {
                                 info: info
                             }
                         });
@@ -432,9 +420,9 @@ router.post("/sendFeedback", expressjwt({secret: process.env.jwtSecretKey}),func
         newFeedback.save(function(err) {
             if (err) return next(err);
             res.status(200).json({
-                status : 200,
+                status  : 200,
                 message : "Feedback successfully sent.",
-                data: {}
+                data    : {}
             });
         });
     } catch (error) {
@@ -502,7 +490,7 @@ router.get("/getFeedbacks", expressjwt({secret: process.env.jwtSecretKey}), func
     try {
         User.findOne({_id: req.user.id, admin: true}, function (err, user) {
             if (err) return next(err);
-            else if (user == null) return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
+            else if (user == null || user == undefined) return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
             else {
                 Feedbacks.find(function (err, feedbacks) {
                     if (err) return next(err);
@@ -510,10 +498,11 @@ router.get("/getFeedbacks", expressjwt({secret: process.env.jwtSecretKey}), func
                         Feedbacks.populate(feedbacks, {path: 'user'}, function (err, posts) {
                             if (err) return next(err);
                             else res.status(200).json({
-                                status: 200,
-                                message: "OK",
-                                data: {
-                                    Feedbacks: posts
+                                status          : 200,
+                                message         : "OK",
+                                data            : {
+                                    count       : posts.length,
+                                    Feedbacks   : posts
                                 }
                             });
                         });
@@ -579,14 +568,12 @@ router.get("/getFeedbacks", expressjwt({secret: process.env.jwtSecretKey}), func
  */
 
 router.get("/dashboardInfos", expressjwt({secret: process.env.jwtSecretKey}), function(req, res, next){
-
-
     if (req.user.id == "" || req.user.id == undefined)
         return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
     try {
         User.findOne({_id: req.user.id, admin: true}, function (err, user) {
             if (err) return next(err);
-            else if (user == null) return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
+            else if (user == null || user == undefined) return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
             else {
                 req.app.get('mongoose').connection.db.listCollections().toArray(function(err, names) {
                     if (err) return next(err);

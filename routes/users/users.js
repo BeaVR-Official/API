@@ -8,6 +8,9 @@ var router = express.Router();
 var sha1 = require('sha1');
 var jwt = require('jsonwebtoken');
 var expressjwt = require('express-jwt');
+var Users = require('../../models/users');
+var CryptoJS = require('crypto-js');
+
 
 /**
  * @api {get} /users Liste des utilisateurs
@@ -49,7 +52,30 @@ var expressjwt = require('express-jwt');
  *
  */
 router.get("/", expressjwt({secret: process.env.jwtSecretKey}), function(req, res, next){
+    if (req.user.id == "" || req.user.id == undefined)
+        return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
     try {
+        Users.findOne({_id : req.user.id, admin : true}, function(err, user) {
+            if (err) return next(err);
+            else if (user == null || user == undefined) return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
+            else {
+                Users.find(function(err, users) {
+                    if (err) return next(err);
+                    else res.status(200).json({
+                        status      : 200,
+                        message     : "OK",
+                        data: {
+                            count   : (users == undefined || users == null) ? 0 : users.length,
+                            Users   : (users == undefined || users == null) ? [] : users
+                        }
+                    });
+                });
+            }
+        });
+    } catch (error) {
+        return next(error);
+    }
+/*    try {
         if (req.user.role == 'Administrator') {
             var query = "SELECT * FROM ??";
             var table = ["AllUsersInfos"];
@@ -68,7 +94,7 @@ router.get("/", expressjwt({secret: process.env.jwtSecretKey}), function(req, re
     }
     catch (error) {
         return next(error);
-    }
+    }*/
 });
 
 /**
@@ -110,8 +136,37 @@ router.get("/", expressjwt({secret: process.env.jwtSecretKey}), function(req, re
  *
  */
 // modifier avec length = 0
-router.get("/:idUser(\\d+)/", expressjwt({secret: process.env.jwtSecretKey}), function(req, res, next){
+router.get("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(req, res, next){
+    if (req.user.id == "" || req.user.id == undefined)
+        return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
+    if (req.params.idUser == undefined || req.params.idUser == "") {
+        return next(req.app.getError(404, "Bad request, parameter missing.", null));
+    }
     try {
+        Users.findOne({_id: req.user.id}, function(err, user) {
+            if (err) return next(err);
+            else if (user == undefined || user == null) return next(req.app.getError(403, "Forbidden : invalid token", null));
+            else Users.findOne({_id: req.params.idUser}, function(err, userSearch) {
+                if (err) return next(err);
+                else if (userSearch == null || userSearch == undefined) return next(req.app.getError(404, "User not found", null));
+                else
+                    if (user.admin == true || user._id == userSearch._id)
+                        res.status(200).json({
+                        status  : 200,
+                        message : "OK",
+                        data    : userSearch
+                    });
+                    else res.status(200).json({
+                        status  : 200,
+                        message : "OK",
+                        data    : userSearch.public
+                    });
+            });
+        });
+    } catch (error) {
+        return next(error);
+    }
+/*    try {
         if (req.user.role == 'Administrator') {
             var query = "SELECT * FROM ?? WHERE ??=?";
             var table = ["AllUsersInfos", "idUser", req.params.idUser];
@@ -134,7 +189,7 @@ router.get("/:idUser(\\d+)/", expressjwt({secret: process.env.jwtSecretKey}), fu
     }
     catch (error) {
         return next(error);
-    }
+    }*/
 });
 
 /**
@@ -176,8 +231,41 @@ router.get("/:idUser(\\d+)/", expressjwt({secret: process.env.jwtSecretKey}), fu
  */
 
 // /users/:idUser/applications
-router.get("/applications/", expressjwt({secret: process.env.jwtSecretKey}), function(req, res, next){
+router.get(":idUser/applications", expressjwt({secret: process.env.jwtSecretKey}), function(req, res, next){
+    if (req.user.id == "" || req.user.id == undefined)
+        return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
+    if (req.params.idUser == undefined || req.params.idUser == "") {
+        return next(req.app.getError(404, "Bad request, parameter missing.", null));
+    }
     try {
+        Users.findOne({_id : req.user.id}, function(err, user) {
+            if (err) return next(error);
+            else if (user == undefined || user == null) return next(req.app.getError(403, "Forbidden : invalid token", null));
+            else if (user._id == req.params.idUser || user.admin == true) {
+                Users.findOne({_id : req.params.idUser}, function(err, searchUser) {
+                    if (err) return next(err);
+                    else if (searchUser == undefined || searchUser == null) return next(req.app.getError(404, "User not found", null));
+                    else searchUser.populate('applications').exec(function(err, final) {
+                            if (err) return next(err);
+                            else res.status(200).json({
+                                status          : 200,
+                                message         : "OK",
+                                data            : {
+                                    count       : final.applications.length,
+                                    applications: final.applications
+                                }
+                            });
+                        });
+                });
+            }
+            else return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
+
+/*    try {
         var query = "SELECT * FROM ?? WHERE ??=?";
         var table = ["AllPurchasesInfos", "buyer", req.user.id];
         query = mysql.format(query, table);
@@ -194,7 +282,7 @@ router.get("/applications/", expressjwt({secret: process.env.jwtSecretKey}), fun
     }
     catch (error) {
         return next(error);
-    }
+    }*/
 }); 
 
 /**
@@ -226,7 +314,31 @@ router.get("/applications/", expressjwt({secret: process.env.jwtSecretKey}), fun
  *
  */
 router.delete("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(req, res, next){
+    if (req.user.id == "" || req.user.id == undefined)
+        return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
+    if (req.params.idUser == undefined || req.params.idUser == "") {
+        return next(req.app.getError(404, "Bad request, parameter missing.", null));
+    }
     try {
+        Users.findOne({_id : req.user.id}, function(err, user) {
+            if (err) return next(err);
+            else if (user == undefined || user == null) return next(req.app.getError(403, "Forbidden : invalid token", null));
+            else if (user.admin == true || user._id == req.params.idUser) {
+                Users.findOneAndRemove({_id: req.params.idUser}, function(err) {
+                    if (err) return next(err);
+                    else res.status(200).json({
+                        status  : 200,
+                        message : "OK",
+                        data    : {}
+                    });
+                });
+            }
+            else return next(req.app.getError(403, "Forbidden : user needs privileges.", null));
+        });
+    } catch (error) {
+        return next(error);
+    }
+ /*   try {
         if (req.user.role == 'Administrator') {
             var query = "DELETE FROM ?? WHERE ??=?";
             var table = ["Users", "idUser", req.params.idUser];
@@ -249,7 +361,7 @@ router.delete("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), functi
     }
     catch (error) {
         return next(error);
-    }
+    }*/
 });
 
 /**
@@ -297,6 +409,57 @@ router.delete("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), functi
  *
  */
 router.put("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(req, res, next){
+    if (req.user.id == "" || req.user.id == undefined)
+        return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
+    if (req.params.idUser == undefined || req.params.idUser == "") {
+        return next(req.app.getError(404, "Bad request, parameter missing.", null));
+    }
+    for (var key in req.body) {
+        if (req.body[key] == "" || req.body[key] == null || req.body[key] == undefined) {
+            return next(req.app.getError(404, "Bad request, parameters can't be null.", null));
+        }
+    }
+    try {
+        Users.findOne({_id : req.user.id}, function(err, user) {
+            if (err) return next(err);
+            else if (user == null || user == undefined) return next(req.app.getError(403, "Forbidden : invalid token", null));
+            else if (user.admin == true || user._id == req.params.idUser) {
+                Users.findOne({_id: req.params.idUser}, function(err, userSearch) {
+                    if (err) return next(err);
+                    else if (userSearch == null || userSearch == undefined) return next(req.app.getError(404, "User not found", null));
+                    else {
+                        for (var key in req.body) {
+                            if (userSearch[key] != undefined) {
+                                if (key == "password")
+                                    userSearch[key] = CryptoJS.SHA256(req.body[key]).toString();
+                                else if (key == "admin") {
+                                    if (user.admin == true)
+                                        userSearch[key] = req.body[key];
+                                }
+                                else
+                                    if (key != "_id")
+                                        userSearch[key] = req.body[key];
+                            }
+                        }
+                        userSearch.save(function(err) {
+                            if (err) return next(err);
+                            else res.status(200).json({
+                                status      : 200,
+                                message     : "OK",
+                                data        : {
+                                    user    : userSearch
+                                }
+                            });
+                        });
+                    }
+                });
+            }
+            else return next(req.app.getError(403, "Forbidden : user needs privileges.", null));
+        });
+    } catch (error) {
+        return next(error);
+    }
+/*
     try {
         if (req.user.role == 'Administrator') {
             var query = "SELECT * FROM ?? WHERE ??=?";
@@ -332,7 +495,7 @@ router.put("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(
     }
     catch (error) {
         return next(error);
-    }
+    }*/
 });
 
 /**
@@ -369,7 +532,34 @@ router.put("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(
  *
  */
 router.post("/", function(req,res, next){
+    if (req.body.pseudo == undefined || req.body.email == undefined || req.body.password == undefined) {
+        return next(req.app.getError(400, "Bad request: one or multiple field incorrect.", {}));
+    }
     try {
+        var newUser = new Users();
+        for (var key in req.body) {
+            if (newUser[key] != undefined) {
+                if (key == "password")
+                    newUser[key] = CryptoJS.SHA256(req.body[key]).toString();
+                else {
+                    if (key != "admin" && key != "_id")
+                        newUser[key] = req.body[key];
+                }
+            }
+        }
+        newUser.save(function(err) {
+            if (err) return next(err);
+            else res.status(200).json({
+                status  : 200,
+                message : "OK",
+                data    : {}
+            }); // OK
+        });
+    }  catch (error) {
+        return next(error);
+    }
+
+   /* try {
         var query = "INSERT INTO ??(??,??,??,??,??,??) VALUES (?,?,?,?,?,?)";
         var table = ["Users", "email", "pseudo", "password", "lastName", "firstName", "role",
             req.body.email, req.body.pseudo, sha1(req.body.password), req.body.lastName, req.body.firstName, req.body.role];
@@ -389,7 +579,7 @@ router.post("/", function(req,res, next){
     }
     catch (error) {
         return next(error);
-    }
+    }*/
 });
 
 module.exports = router;
