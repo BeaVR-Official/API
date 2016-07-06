@@ -2,10 +2,9 @@
  * Created by kersal_e on 16/06/2016.
  */
 
-var mysql = require("mysql");
+//var mysql = require("mysql");
 var express = require('express');
 var router = express.Router();
-var sha1 = require('sha1');
 var jwt = require('jsonwebtoken');
 var expressjwt = require('express-jwt');
 var Users = require('../../models/users');
@@ -255,7 +254,7 @@ router.get(":idUser/applications",
         }
         try {
             Users.findOne({_id : req.user.id}, function(err, user) {
-                if (err) return next(error);
+                if (err) return next(err);
                 else if (user == undefined || user == null) return next(req.app.getError(403, "Forbidden : invalid token", null));
                 else {
                     if (user._id == req.params.idUser || user.admin == true)
