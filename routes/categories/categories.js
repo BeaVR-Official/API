@@ -8,6 +8,92 @@ var router = express.Router();
 var sha1 = require('sha1');
 
 /**
+* @api {get} /categorytypesanddevices Récupérer les thèmes et les devices
+* @apiVersion 1.0.0
+* @apiName Récupérer les thèmes et les devices
+* @apiGroup Gestion Categories
+* @apiDescription Retourne la liste de tout les thèmes et de tout les devices.
+*
+*
+* @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
+* @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
+* @apiSuccess (Succès) {Object} Categories Liste des thèmes et des devices
+*
+* @apiSuccessExample Succès - Réponse :
+*     {
+*       "Error": false,
+*       "Code" : 1,
+*       "CategoryTypesAndDevices": {
+    *             "CategoryTypes": "Toutes, Sciences, Sports, Mécanique",
+    *             "Devices": "Leap Motion, Oculus Rift, HTC Vive, Samsung VR, HoloLens, Project Morpheus"
+        *        }
+*     }
+*
+* @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
+* @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête)
+*
+* @apiErrorExample Erreur - Réponse :
+*     {
+*       "Error" : true,
+*       "Code" : 102
+    *     }
+*
+*/
+router.get("/categoriesAndDevices", function(req, res){
+    var query = "SELECT * FROM `AllCategoriesAndDevices`";
+
+    req.app.locals.connection.query(query, function(err, rows){
+        if (!err)
+            res.json({"Error": false, "Code" : 1, "CategoriesAndDevices": rows[0]}); // OK
+        else
+            res.json({"Error": true, "Code" : 102}); // Erreur
+    });
+});
+
+/**
+* @api {get} /categorytypesanddevices Récupérer les thèmes et les devices
+* @apiVersion 1.0.0
+* @apiName Récupérer les thèmes et les devices
+* @apiGroup Gestion Categories
+* @apiDescription Retourne la liste de tout les thèmes et de tout les devices.
+*
+*
+* @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
+* @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
+* @apiSuccess (Succès) {Object} Categories Liste des thèmes et des devices
+*
+* @apiSuccessExample Succès - Réponse :
+*     {
+*       "Error": false,
+*       "Code" : 1,
+*       "CategoryTypesAndDevices": {
+    *             "CategoryTypes": "Toutes, Sciences, Sports, Mécanique",
+    *             "Devices": "Leap Motion, Oculus Rift, HTC Vive, Samsung VR, HoloLens, Project Morpheus"
+        *        }
+*     }
+*
+* @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
+* @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête)
+*
+* @apiErrorExample Erreur - Réponse :
+*     {
+*       "Error" : true,
+*       "Code" : 102
+    *     }
+*
+*/
+router.get("/categoriesAndDevices", function(req, res){
+    var query = "SELECT * FROM `AllCategoriesAndDevices`";
+
+    req.app.locals.connection.query(query, function(err, rows){
+        if (!err)
+            res.json({"Error": false, "Code" : 1, "CategoriesAndDevices": rows[0]}); // OK
+        else
+            res.json({"Error": true, "Code" : 102}); // Erreur
+    });
+});
+
+/**
 * @api {get} /categoryTypes/ Liste des thèmes
 * @apiVersion 1.0.0
 * @apiName Liste des thèmes
@@ -55,18 +141,6 @@ router.get("/categoryTypes", function(req, res){
             res.json({"Error": true, "Code" : 102}); // Error
     });
 });
-
-router.get("/categoriesAndDevices", function(req, res){
-    var query = "SELECT * FROM `AllCategoriesAndDevices`";
-
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-            res.json({"Error": false, "Code" : 1, "CategoriesAndDevices": rows[0]}); // OK
-        else
-            res.json({"Error": true, "Code" : 102}); // Erreur
-    });
-});
-
 
 /**
 * @api {post} /categoryTypes Ajouter un thème
@@ -225,38 +299,5 @@ router.get("/:idType", function(req, res){
             res.json({"Error" : true, "Code" : 102}); // Erreur
     });
 });
-
-/**
-* @api {get} /categorytypesanddevices Récupérer les thèmes et les devices
-* @apiVersion 1.0.0
-* @apiName Récupérer les thèmes et les devices
-* @apiGroup Gestion Categories
-* @apiDescription Retourne la liste de tout les thèmes et de tout les devices.
-*
-*
-* @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
-* @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
-* @apiSuccess (Succès) {Object} Categories Liste des thèmes et des devices
-*
-* @apiSuccessExample Succès - Réponse :
-*     {
-*       "Error": false,
-*       "Code" : 1,
-*       "CategoryTypesAndDevices": {
-    *             "CategoryTypes": "Toutes, Sciences, Sports, Mécanique",
-    *             "Devices": "Leap Motion, Oculus Rift, HTC Vive, Samsung VR, HoloLens, Project Morpheus"
-        *        }
-*     }
-*
-* @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
-* @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête)
-*
-* @apiErrorExample Erreur - Réponse :
-*     {
-*       "Error" : true,
-*       "Code" : 102
-    *     }
-*
-*/
 
 module.exports = router;
