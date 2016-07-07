@@ -56,6 +56,18 @@ router.get("/categoryTypes", function(req, res){
     });
 });
 
+router.get("/categoriesAndDevices", function(req, res){
+    var query = "SELECT * FROM `AllCategoriesAndDevices`";
+
+    req.app.locals.connection.query(query, function(err, rows){
+        if (!err)
+            res.json({"Error": false, "Code" : 1, "CategoriesAndDevices": rows[0]}); // OK
+        else
+            res.json({"Error": true, "Code" : 102}); // Erreur
+    });
+});
+
+
 /**
 * @api {post} /categoryTypes Ajouter un thème
 * @apiVersion 1.0.0
@@ -151,18 +163,6 @@ router.get("/", function(req, res){
             res.json({"Error": true, "Code" : 102}); // Error
     });
 });
-
-router.get("/categoriesAndDevices", function(req, res){
-    var query = "SELECT * FROM `AllCategoriesAndDevices`";
-
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-            res.json({"Error": false, "Code" : 1, "CategoriesAndDevices": rows[0]}); // OK
-        else
-            res.json({"Error": true, "Code" : 102}); // Erreur
-    });
-});
-
 
 /**
 * @api {get} /categories/:idType Récupérer les catégories d'un thème
