@@ -2,7 +2,6 @@
  * Created by kersal_e on 16/06/2016.
  */
 
-//var mysql = require("mysql");
 var express = require('express');
 var router = express.Router();
 var jwt = require('jsonwebtoken');
@@ -243,8 +242,12 @@ router.get("/:idUser",
  *
  */
 
+router.get("/applications", function(req, res, next) {
+    return next(req.app.getError(404, "Request deprecated. Report to GET /api/users/:idUser/applications ", null));
+});
+
 // /users/:idUser/applications
-router.get(":idUser/applications",
+router.get("/:idUser/applications",
     expressjwt({secret: process.env.jwtSecretKey}),
     function(req, res, next) {
         if (req.user.id == "" || req.user.id == undefined)
@@ -255,11 +258,11 @@ router.get(":idUser/applications",
         try {
             Users.findOne({_id : req.user.id}, function(err, user) {
                 if (err) return next(err);
-                else if (user == undefined || user == null) return next(req.app.getError(403, "Forbidden : invalid token", null));
+                else if (user == undefined || user == null) return next(req.app.getError(403, "Unauthorized : invalid token", null));
                 else {
                     if (user._id == req.params.idUser || user.admin == true)
                         next();
-                    else return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
+                    else return next(req.app.getError(403, "Unauthorized : user needs admin privileges.", null));
                 }
             });
         }
@@ -341,16 +344,16 @@ router.delete("/:idUser",
     expressjwt({secret: process.env.jwtSecretKey}),
     function(req, res, next) {
         if (req.user.id == "" || req.user.id == undefined)
-            return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
+            return next(req.app.getError(403, "Unauthorized : user needs to be logged.", null));
         if (req.params.idUser == undefined || req.params.idUser == "") {
             return next(req.app.getError(404, "Bad request, parameter missing.", null));
         }
         try {
             Users.findOne({_id: req.user.id}, function (err, user) {
                 if (err) return next(err);
-                else if (user == undefined || user == null) return next(req.app.getError(403, "Forbidden : invalid token", null));
+                else if (user == undefined || user == null) return next(req.app.getError(403, "Unauthorized : invalid token", null));
                 else if (user.admin == true || user._id == req.params.idUser) next();
-                else return next(req.app.getError(403, "Forbidden : user needs privileges.", null));
+                else return next(req.app.getError(403, "Unauthorized : user needs privileges.", null));
             });
         }
         catch (error) {
@@ -445,7 +448,7 @@ router.put("/:idUser",
     expressjwt({secret: process.env.jwtSecretKey}),
     function(req, res, next) {
         if (req.user.id == "" || req.user.id == undefined)
-            return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
+            return next(req.app.getError(403, "Unauthorized : user needs to be logged.", null));
         if (req.params.idUser == undefined || req.params.idUser == "") {
             return next(req.app.getError(404, "Bad request, parameter missing.", null));
         }
@@ -457,11 +460,11 @@ router.put("/:idUser",
         try {
             Users.findOne({_id : req.user.id}, function(err, user) {
                 if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Forbidden : invalid token", null));
+                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
                 else if (user.admin == true || user._id == req.params.idUser) {
                     return next(); // Accepte la requête si l'utilisateur est admin ou utilisateur à qui appartient le profil
                 }
-                else return next(req.app.getError(403, "Forbidden : user needs privileges.", null));
+                else return next(req.app.getError(403, "Unauthorized : user needs privileges.", null));
             });
         } catch (error) {
             return next(error);
@@ -626,6 +629,103 @@ router.post("/",
          catch (error) {
          return next(error);
          }*/
+    }
+);
+
+/*
+*  Permet de récupérer tous les commentaires d'un utilisateur
+*  Authorization nécessaire : admin ou user correspondant à l'utilisateur demandé
+*  Query acceptés : order=[ASC|DESC] & limit=[int]
+*/
+router.get("/:idUser/comments",
+    expressjwt({secret: process.env.jwtSecretKey}),
+    function(req, res, next) {
+        if (req.user.id == "" || req.user.id == undefined)
+            return next(req.app.getError(403, "Unauthorized : user needs to be logged.", null));
+        if (req.params.idUser == undefined || req.params.idUser == "") {
+            return next(req.app.getError(404, "Bad request, parameter missing.", null));
+        }
+        try {
+            Users.findOne({_id : req.user.id}, function(err, user) {
+                if (err) return next(err);
+                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
+                else if (user.admin == true || user._id == req.params.idUser) {
+                    return next(); // Accepte la requête si l'utilisateur est admin ou utilisateur à qui appartient le profil
+                }
+                else return next(req.app.getError(403, "Unauthorized : user needs privileges.", null));
+            });
+        } catch (error) {
+            return next(error);
+        }
+    },
+    function(req, res, next) {
+        try {
+            req.app.get('mongoose').model('comments').find({ author: req.params.idUser }).
+            sort({created_at: (req.query["order"] && req.query["order"] == "ASC") ? 1 : -1}).
+            limit((req.query["limit"] && isNaN(parseInt(req.query["limit"])) == false) ? parseInt(req.query["limit"]) : 999).
+            exec(function(err, comments) {
+                if (err) return next(err);
+                else res.status(200).json({
+                    status      : 200,
+                    message     : "OK",
+                    data        : {
+                        count   : (comments == undefined || comments == null) ? 0 : comments.length,
+                        comments: (comments == undefined || comments == null) ? [] : comments
+                    }
+                });
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
+);
+
+
+/*
+ *  Permet de récupérer un commentaire posté sur une application par un utilisateur
+ *  Authorization nécessaire : admin ou user correspondant à l'utilisateur demandé
+ */
+router.get("/:idUser/comments/:idApp",
+    expressjwt({secret: process.env.jwtSecretKey}),
+    function(req, res, next) {
+        if (req.user.id == "" || req.user.id == undefined)
+            return next(req.app.getError(403, "Unauthorized : user needs to be logged.", null));
+        if (req.params.idUser == undefined || req.params.idUser == "") {
+            return next(req.app.getError(400, "Bad request : parameter missing.", null));
+        }
+        try {
+            Users.findOne({_id : req.user.id}, function(err, user) {
+                if (err) return next(err);
+                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
+                else if (user.admin == true || user._id == req.params.idUser) {
+                    req.app.get('mongoose').model('applications').find({ _id : req.params.idApp}, function(err, app) {
+                        if (err) return next(err);
+                        else if (app == null || app == undefined) return next(req.app.getError(404, "Not found : application unknown."));
+                        else next();
+                    });
+                }
+                else return next(req.app.getError(403, "Unauthorized : user needs privileges.", null));
+            });
+        } catch (error) {
+            return next(error);
+        }
+    },
+    function(req, res, next) {
+        try {
+            req.app.get('mongoose').model('comments').findOne({ author: req.params.idUser, application: req.params.idApp }, function(err, comment) {
+                if (err) return next(err);
+                else
+                    res.status(200).json({
+                    status          : 200,
+                    message         : "OK",
+                    data            : (comment == null || comment == undefined) ? {} : {
+                        comment     : comment
+                    }
+                })
+            });
+        } catch (error) {
+            return next(error);
+        }
     }
 );
 

@@ -6,6 +6,8 @@ var mysql = require("mysql");
 var express = require('express');
 var router = express.Router();
 var sha1 = require('sha1');
+var Comments = require("../../models/comments");
+var expressjwt = require('express-jwt');
 
 
 /**
@@ -512,5 +514,246 @@ router.post("/",function(req,res, next) {
         return next(error);
     }
 });
+
+
+/**
+ * @api {get} /:idApp/comments Liste des commentaires d'une application
+ * @apiVersion 1.0.0
+ * @apiName Liste des commentaires d'une application
+ * @apiGroup Gestion Commentaires
+ * @apiDescription Récupérer la liste des commentaires d'une application donnée.
+ *
+ * @apiParam {Number} idApp ID de l'application
+ *
+ * @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
+ * @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
+ * @apiSuccess (Succès) {Object[]} Comments Liste des commentaires
+ *
+ * @apiSuccessExample Succès - Réponse :
+ *     {
+*       "Error": false,
+*       "Code" : 1,
+*       "Comments" : [
+    *         {
+    *           "idComment": 1,
+*           "comment": "Ceci est un commentaire",
+*           "rating": 5,
+*           "author": 1,
+*           "picture_profile": "Lien vers la photo de profil",
+*           "application": 1,
+*           "date": "2016-04-14T18:51:57.000Z",
+*           "title": "Titre"
+    *         },
+*         ...
+*       ]
+*     }
+ *
+ * @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
+ * @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête)
+ *
+ * @apiErrorExample Erreur - Réponse :
+ *     {
+*       "Error" : true,
+*       "Code" : 102
+    *     }
+ *
+ */
+router.get("/:idApp/comments",
+    function(req, res, next) {
+        try {
+            req.app.get('mongoose').model('applications').findOne({_id : req.params.idApp}, function(err, app) {
+                if (err) return next(err);
+                else if (app == null || app == undefined) return next(req.app.getError(404, "Not found: application unknown", null));
+                else next();
+            });
+        }  catch (error) {
+            return next(error);
+        }
+    },
+    function(req,res, next){
+        try {
+            req.app.get('mongoose').model('comments').find({ application: req.params.idApp }).
+            sort({created_at: (req.query["order"] && req.query["order"] == "ASC") ? 1 : -1}).
+            limit((req.query["limit"] && isNaN(parseInt(req.query["limit"])) == false) ? parseInt(req.query["limit"]) : 999).
+            exec(function(err, comments) {
+                if (err) return next(err);
+                else res.status(200).json({
+                    status      : 200,
+                    message     : "OK",
+                    data        : {
+                        count   : (comments == undefined || comments == null) ? 0 : comments.length,
+                        comments: (comments == undefined || comments == null) ? [] : comments
+                    }
+                });
+            });
+        } catch(error) {
+            return next(error);
+        }
+        /*        try {
+         var query = "SELECT * FROM `AllCommentsInfos` WHERE ??=? ORDER BY date DESC";
+         var table = ["application",req.params.idApp];
+
+         query = mysql.format(query,table);
+         req.app.locals.connection.query(query,function(err,rows){
+         if(err) {
+         return next(req.app.getError(500, "Internal error width database", err));
+         } else {
+         res.status(200).json({status: 200, message: "OK", data: {Comments: rows}});
+         }
+         });
+         }
+         catch (error) {
+         return next(error);
+         }*/
+    }
+);
+
+/**
+ * @api {delete} /comment/:idComment Supprimer un commentaire
+ * @apiVersion 1.0.0
+ * @apiName Supprimer un commentaire
+ * @apiGroup Gestion Commentaires
+ * @apiDescription Supprimer un commentaire.
+ *
+ * @apiParam {Number} idComment ID du commentaire
+ *
+ * @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
+ * @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
+ *
+ * @apiSuccessExample Succès - Réponse :
+ *     {
+*       "Error": false,
+*       "Code" : 1
+    *     }
+ *
+ * @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
+ * @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête)
+ *
+ * @apiErrorExample Erreur - Réponse :
+ *     {
+*       "Error" : true,
+*       "Code" : 102
+    *     }
+ *
+ */
+router.delete("/:idApp/comments/:idComment", function(req,res, next){
+    try {
+        var query = "DELETE from ?? WHERE ??=?";
+        var table = ["Comments","idComment",req.params.idComment];
+        query = mysql.format(query,table);
+        req.app.locals.connection.query(query,function(err,rows){
+            if(err) {
+                return next(req.app.getError(500, "Internal error width database", err));
+            } else {
+                res.status(200).json({status: 200, message: "OK", data: {}});
+            }
+        });
+    }
+    catch (error) {
+        return next(error);
+    }
+});
+
+
+/**
+ * @api {post} /comments Publier un commentaire
+ * @apiVersion 1.0.0
+ * @apiName Publier un commentaire
+ * @apiGroup Gestion Commentaires
+ * @apiDescription Poste un commentaire sur une application.
+ *
+ * @apiParam {String} comment Commentaire de l'utilisateur
+ * @apiParam {Number} rating Note donnée par l'utilisateur à l'application
+ * @apiParam {Number} author ID de l'utilisateur
+ * @apiParam {Number} application ID de l'application
+ * @apiParam {Date} date Date du commentaire
+ * @apiParam {String} title Titre du commentaire
+ *
+ * @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
+ * @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
+ *
+ * @apiSuccessExample Succès - Réponse :
+ *     {
+*       "Error": false,
+*       "Code" : 1
+    *     }
+ *
+ * @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
+ * @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête, 103 = L'adresse mail n'existe pas, 202 = Le mail de réinitialisation n'a pas pu être envoyé)
+ *
+ * @apiErrorExample Erreur - Réponse :
+ *     {
+*       "Error" : true,
+*       "Code" : 102
+    *     }
+ *
+ */
+router.post("/:idApp/comment",
+    expressjwt({secret: process.env.jwtSecretKey}),
+    function(req, res, next) {
+        if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
+        if (req.body.title == undefined || req.body.title == "" ||
+            req.body.comment == undefined || req.body.comment == "")
+            return next(req.app.getError(404, "Bad request: one or multiple parameters missing.", null));
+        try {
+            req.app.get('mongoose').model('users').findOne({_id : req.user.id}, function(err, user) {
+                if (err) return next(err);
+                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
+                else  {
+                    req.app.get('mongoose').model('applications').findOne({ _id : req.params.idApp}, function(err, app) {
+                        if (err) return next(err);
+                        else if (app == null || app == undefined) return next(req.app.getError(404, "Not found : invalid application id", null));
+                        else {
+                            req.app.get('mongoose').model('comments').findOne({ author: req.user.id, application: req.params.idApp }, function(err, comment) {
+                                if (err) return next(err);
+                                else if (comment) return next(req.app.getError(409, "Conflict: user has already commented this app"), null);
+                                else next();
+                            })
+                        }
+                    });
+                }
+            });
+        } catch (error) {
+            return next(error);
+        }
+    },
+    function(req,res, next){
+        try {
+            var newComment = new Comments({
+                title       : req.body.title,
+                comment     : req.body.comment,
+                rating      : req.body.rating,
+                application : req.params.idApp
+            });
+            newComment.save(function(err){
+                if (err) return next(err);
+                else res.status(200).json({
+                    status      : 200,
+                    message     : "OK",
+                    data        : {}
+                });
+            });
+        } catch (error) {
+            return next(error);
+        }
+        /*    try {
+         var query = "INSERT INTO ??(??,??,??,??,??,??) VALUES (?,?,?,?,?,?)";
+         var table = ["Comments","title", "comment","rating","author","application","date",
+         req.body.title, req.body.comment, req.body.rating, req.body.author, req.body.application,
+         (new Date ((new Date((new Date(new Date())).toISOString() )).getTime() - ((new Date()).getTimezoneOffset()*60000))).toISOString().slice(0, 19).replace('T', ' ')];
+         query = mysql.format(query,table);
+         req.app.locals.connection.query(query,function(err,rows){
+         if(err) {
+         return next(req.app.getError(500, "Internal error width database", err));
+         } else {
+         res.status(200).json({status: 200, message: "OK", data: {}});
+         }
+         });
+         }
+         catch (error) {
+         return next(error);
+         }*/
+    }
+);
 
 module.exports = router;

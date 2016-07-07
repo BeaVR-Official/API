@@ -9,6 +9,7 @@ var categories = require('./categories');
 var devices = require('./devices');
 var users = require('./users');
 
+
 var applicationsSchema = new Schema({
     name            : { type: String, required: true, unique: true },
     description     : { type: String, required: true },

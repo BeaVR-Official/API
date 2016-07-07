@@ -4,13 +4,10 @@
 
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
-var ObjectId = Schema.Types.ObjectId;
-var categoryField = require('./categoryField');
 
 var categoriesSchema = new Schema({
     name            : { type: String, required: true, unique: true },
     description     : { type: String, required: true },
-    fieldType       : { type: ObjectId, ref: 'categoryField'}
 });
 
 categoriesSchema.pre('save', true, function(next, done) {
