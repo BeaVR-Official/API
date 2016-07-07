@@ -6,7 +6,6 @@ var mysql = require("mysql");
 var express = require('express');
 var router = express.Router();
 var sha1 = require('sha1');
-var Comments = require("../../models/comments");
 var expressjwt = require('express-jwt');
 
 
@@ -51,8 +50,39 @@ var expressjwt = require('express-jwt');
 *     }
 *
 */
-router.get("/", function(req, res, next){
+router.get("/", function(req, res, next) {
     try {
+        var query = {};
+        var schema = {
+            name            : "",
+            categoriesName  : [],
+            devicesNames    : [],
+            authorNamme     : ""
+        };
+        for (var key in req.query) {
+            if (req.query[key] != undefined && schema[key] != undefined) {
+                if ((key == "categoriesName" || key == "devicesName") && Array.isArray(req.query[key]))
+                    query[key] = req.query[key];
+                else
+                    query[key] = req.query[key];
+            }
+
+        }
+        req.app.get('mongoose').model('applications').find(query, function(err, applications) {
+            if (err) return next(err);
+            else res.status(200).json({
+                status          : 200,
+                message         : "OK",
+                data            : (applications == undefined || applications == null) ? { count : 0 }: {
+                    count       : applications.length,
+                    application : applications
+                }
+            });
+        });
+    } catch (error) {
+        return next(error);
+    }
+/*    try {
         var query = "SELECT * FROM `AllApplicationsInfos`";
 
         req.app.locals.connection.query(query, function(err, rows){
@@ -64,11 +94,67 @@ router.get("/", function(req, res, next){
     }
     catch (error) {
         return next(error);
-    }
+    }*/
 });
 
-router.get("/state/:state", function(req, res, next){
-    try {
+/* GET /applications/pending
+* Retourne la liste des applications en attente de validation
+* Si admin renvoie toute la liste
+* Si user renvoie ses applications déposées en attente de validation
+* */
+router.get("/pending",
+    expressjwt({secret: process.env.jwtSecretKey}),
+    function(req, res, next){
+        if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
+        try {
+            req.app.get('mongoose').model('users').findOne({_id: req.user.id}, function (err, user) {
+                if (err) return next(err);
+                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
+                else {
+                    req.user.admin = user.admin;
+                    next();
+                }
+            });
+        } catch (error) {
+            return next(error);
+        }
+    },
+    function(req, res, next) {
+        try {
+            if (req.user.admin == true) {
+                req.app.get('mongoose').model('validation').find({type: 'application'}).
+                sort({created_at: 1}).
+                exec(function(err, pending) {
+                    if (err) return next(err);
+                    else res.status(200).json({
+                        status      : 200,
+                        message     : "OK",
+                        data        : (pending == null || pending == undefined) ? {} : {
+                            count   : pending.length,
+                            pending : pending
+                        }
+                    });
+                })
+            }
+            else {
+                req.app.get('mongoose').model('validation').find({type: 'application', author: req.user.id}).
+                sort({created_at: 1}).
+                exec(function(err, pending) {
+                    if (err) return next(err);
+                    else res.status(200).json({
+                        status      : 200,
+                        message     : "OK",
+                        data        : (pending == null || pending == undefined) ? {} : {
+                            count   : pending.length,
+                            pending : pending
+                        }
+                    });
+                })
+            }
+        } catch (error) {
+            return next(error);
+        }
+/*    try {
         var query = "SELECT * FROM `AllApplicationsInfos` WHERE ??=?";
         var table = ["state", req.params.state];
 
@@ -87,8 +173,139 @@ router.get("/state/:state", function(req, res, next){
         });
     } catch (error) {
         return next(error);
-    }
+    }*/
 });
+
+/* POST /applications/pending/:idApp/validate
+ * Publie une application en attente de validation
+ * */
+router.post("/pending/:idApp/validate",
+    expressjwt({secret: process.env.jwtSecretKey}),
+    function(req, res, next){
+        if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
+        try {
+            req.app.get('mongoose').model('users').findOne({_id: req.user.id}, function (err, user) {
+                if (err) return next(err);
+                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
+                else if (user.admin != true) return next(req.app.getError(403, "Unauthorized : needs admin privileges", null));
+                else next();
+            });
+        } catch (error) {
+            return next(error);
+        }
+    },
+    function(req, res, next) {
+        try {
+            req.app.get('mongoose').model('validation').findOne({_id : req.params.idApp, type: 'application'}, function(err, application) {
+                if (err) return next(err);
+                else if (application == null || application == undefined) return next(req.app.getError(404, "Not found : verify id match with pending application", null));
+                else {
+                    var newApplication = req.app.get('mongoose').model('applications')();
+                    for (var key in application.application)
+                        newApplication[key] = application.application[key];
+                    newApplication.save(function(err) {
+                        if (err) return next(err);
+                        else {
+                            res.status(200).json({
+                                status          : 200,
+                                message         : "OK",
+                                data            : {}
+                            });
+                            application.delete();
+                        }
+                    })
+                }
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
+);
+
+/* DELETE /applications/pending/:idApp
+ * Supprime une requête en attente de validation
+ * */
+router.delete("/pending/:idApp",
+    expressjwt({secret: process.env.jwtSecretKey}),
+    function(req, res, next){
+        if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
+        try {
+            req.app.get('mongoose').model('users').findOne({_id: req.user.id}, function (err, user) {
+                if (err) return next(err);
+                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
+                else {
+                    req.user.admin = user.admin;
+                    next();
+                }
+            });
+        } catch (error) {
+            return next(error);
+        }
+    },
+    function(req, res, next) {
+        try {
+            req.app.get('mongoose').model('validation').findOne({ _id : req.params.idApp }, function(err, app) {
+                if (err) return next(err);
+                else if (app == null || app == undefined) return next(req.app.getError(404, "Not found : unknown application", null));
+                else {
+                    if (req.user.admin == true || req.user.id == app.author) {
+                        app.delete(function(err) {
+                            if (err) return next(err);
+                            else res.status(200).json({
+                                status      : 200,
+                                message     : "Successfully deleted",
+                                data        : {}
+                            });
+                        });
+                        return next();
+                    }
+                    else {
+                        return next(req.app.getError(403, "Unauthorized : user not allowed to delete this app", null));
+                    }
+                }
+            })
+        } catch (error) {
+            return next(error);
+        }
+    }
+);
+
+/* GET /api/applications/pending/:idApp
+*  Retourne une application en attente de validation
+* */
+router.get("/pending/:idApp",
+    expressjwt({secret: process.env.jwtSecretKey}),
+    function(req, res, next){
+        if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
+        try {
+            req.app.get('mongoose').model('users').findOne({_id: req.user.id}, function (err, user) {
+                if (err) return next(err);
+                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
+                else if (user.admin != true) return next(req.app.getError(403, "Unauthorized : needs admin privileges", null));
+                else next();
+            });
+        } catch (error) {
+            return next(error);
+        }
+    },
+    function(req, res, next) {
+        try {
+            req.app.get('mongoose').model('validation').findOne({_id : req.params.idApp, type: 'application'}, function(err, application) {
+                if (err) return next(err);
+                else if (application == null || application == undefined) return next(req.app.getError(404, "Not found : verify id match with pending application", null));
+                else res.status(200).json({
+                        status          : 200,
+                        message         : "OK",
+                        data            : {
+                            application : application
+                        }
+                    });
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
+);
 
 
 /**
@@ -130,8 +347,23 @@ router.get("/state/:state", function(req, res, next){
 *       "Code" : 102
 *     }
 */
-router.get("/:idApplication", function(req, res, next){
+router.get("/:idApplication", function(req, res, next) {
     try {
+        req.app.get('mongoose').model('applications').findOne({ _id : req.params.idApplication }, function(err, app) {
+            if (err) return next(err);
+            else if (app == undefined || app == null) return next(req.app.getError(404, "Not found : application not found", null));
+            else res.status(200).json({
+                    status          : 200,
+                    message         : "OK",
+                    data            : {
+                        application : app
+                    }
+                });
+        });
+    } catch (error) {
+        return next(error);
+    }
+   /* try {
         var query = "SELECT * FROM `AllApplicationsInfos` WHERE ??=?";
         var table = ["id", req.params.idApplication];
 
@@ -150,7 +382,7 @@ router.get("/:idApplication", function(req, res, next){
         });
     } catch (error) {
         return next(error);
-    }
+    }*/
 });
 
 /**
@@ -181,8 +413,46 @@ router.get("/:idApplication", function(req, res, next){
     *     }
 *
 */
-router.delete("/:idApplication", function(req, res, next) {
-    try {
+router.delete("/:idApplication",
+    expressjwt({secret: process.env.jwtSecretKey}),
+    function(req, res, next){
+        if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
+        try {
+            req.app.get('mongoose').model('users').findOne({_id: req.user.id}, function (err, user) {
+                if (err) return next(err);
+                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
+                else {
+                    req.user.admin = user.admin;
+                    next();
+                }
+            });
+        } catch (error) {
+            return next(error);
+        }
+    },
+    function(req, res, next) {
+        try {
+            req.app.get('mongoose').model('applications').findOne({ _id : req.params.idApplication }, function(err, app) {
+                if (err) return next(err);
+                else if (req.user.admin == true || req.user.id == app.author) {
+                    app.remove(function(err) {
+                        if (err) return next(err);
+                        else res.status(200).json({
+                            status      : 200,
+                            message     : "Successfully deleted",
+                            data        : {}
+                        });
+                    });
+                    return next();
+                }
+                else {
+                    return next(req.app.getError(403, "Unauthorized : user not allowed to delete this app", null));
+                }
+            })
+        } catch (error) {
+            return next(error);
+        }
+/*    try {
         var query = "DELETE FROM ?? WHERE ??=?";
         var table = ["Applications", "idApplication", req.params.idApplication];
 
@@ -201,7 +471,7 @@ router.delete("/:idApplication", function(req, res, next) {
         });
     } catch (error) {
         return next(error);
-    }
+    }*/
 });
 
 /**
@@ -688,7 +958,7 @@ router.delete("/:idApp/comments/:idComment", function(req,res, next){
     *     }
  *
  */
-router.post("/:idApp/comment",
+router.post("/:idApp/comments",
     expressjwt({secret: process.env.jwtSecretKey}),
     function(req, res, next) {
         if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
@@ -719,7 +989,7 @@ router.post("/:idApp/comment",
     },
     function(req,res, next){
         try {
-            var newComment = new Comments({
+            var newComment = new req.app.get('mongoose').model('comments')({
                 title       : req.body.title,
                 comment     : req.body.comment,
                 rating      : req.body.rating,

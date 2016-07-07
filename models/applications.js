@@ -5,19 +5,15 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 var ObjectId = Schema.Types.ObjectId;
-var categories = require('./categories');
-var devices = require('./devices');
-var users = require('./users');
-
 
 var applicationsSchema = new Schema({
     name            : { type: String, required: true, unique: true },
     description     : { type: String, required: true },
     logo            : String,
     url             : String,
-    categoriesName  : { type: ObjectId, ref: 'categories'},
-    devicesNames    : { type: ObjectId, ref : 'devices'},
-    authorName      : {type: ObjectId, ref: 'users'},
+    categoriesName  : [{ type: ObjectId, ref: 'categories'}],
+    devicesNames    : [{ type: ObjectId, ref : 'devices'}],
+    author          : {type: ObjectId, ref: 'users'},
     created_at      : Date,
     updated_at      : Date
 });

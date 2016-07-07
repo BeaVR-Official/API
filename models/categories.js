@@ -7,7 +7,7 @@ var Schema = mongoose.Schema;
 
 var categoriesSchema = new Schema({
     name            : { type: String, required: true, unique: true },
-    description     : { type: String, required: true },
+    description     : { type: String, required: true }
 });
 
 categoriesSchema.pre('save', true, function(next, done) {
