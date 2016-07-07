@@ -5,8 +5,6 @@
 var express = require('express');
 var router = express.Router();
 var expressjwt = require('express-jwt');
-var Devices = require('../../models/devices');
-var Users = require('../../models/users');
 
 /**
  * @api {get} /devices/ Liste des devices
@@ -51,7 +49,7 @@ var Users = require('../../models/users');
 router.get("/",
     function(req, res, next) {
         try {
-            Devices.find({}, function(err, devices) {
+            req.app.get('mongoose').model('devices').find({}, function(err, devices) {
                 if (err) return next(err);
                 else res.status(200).json({
                     status      : 200,
@@ -118,7 +116,7 @@ router.get("/",
 router.get("/:idDevice",
     function(req, res, next) {
         try {
-            Devices.find({_id: req.params.idDevice}, function(err, device) {
+            req.app.get('mongoose').model('devices').find({_id: req.params.idDevice}, function(err, device) {
                 if (err) return next(err);
                 else if (device == null || device == undefined) return next(req.app.getError(404, "Not found: unknown device id"), null)
                 else res.status(200).json({
@@ -194,7 +192,7 @@ router.post("/",
             return next(req.app.getError(400, "Bad request : missing parameter name.", null));
         }
         try {
-            Users.findOne({_id : req.user.id, admin : true}, function(err, user) {
+            req.app.get('mongoose').model('users').findOne({_id : req.user.id, admin : true}, function(err, user) {
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
                 else next();
@@ -205,7 +203,7 @@ router.post("/",
     },
     function(req, res, next){
         try {
-            var device = new Devices({
+            var device = new req.app.get('mongoose').model('devices')({
                 name    : req.body.name,
                 image   : (req.body['image'] != undefined) ? req.body.image : ""
             });
@@ -260,7 +258,7 @@ router.delete("/:idDevice",
         if (req.user.id == "" || req.user.id == undefined)
             return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
         try {
-            Users.findOne({_id : req.user.id, admin : true}, function(err, user) {
+            req.app.get('mongoose').model('users').findOne({_id : req.user.id, admin : true}, function(err, user) {
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
                 else next();
@@ -271,7 +269,7 @@ router.delete("/:idDevice",
     },
     function(req, res, next){
         try {
-            Devices.findOneAndRemove({_id: req.params.idDevice}, function(err) {
+            req.app.get('mongoose').model('devices').findOneAndRemove({_id: req.params.idDevice}, function(err) {
                 if (err) return next(err);
                 else res.status(200).json({
                     status  : 200,
@@ -322,7 +320,7 @@ router.put("/:idDevice",
         if (req.user.id == "" || req.user.id == undefined)
             return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
         try {
-            Users.findOne({_id : req.user.id, admin : true}, function(err, user) {
+            req.app.get('mongoose').model('users').findOne({_id : req.user.id, admin : true}, function(err, user) {
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
                 else next();
@@ -333,7 +331,7 @@ router.put("/:idDevice",
     },
     function(req, res, next){
         try {
-            Devices.findOne({_id: req.params.idDevice}, function(err, device) {
+            req.app.get('mongoose').model('devices').findOne({_id: req.params.idDevice}, function(err, device) {
                 if (err) return next(err);
                 else if (device == undefined || device == null) return next(req.app.getError(404, "Not found: device unknown"), null);
                 else {

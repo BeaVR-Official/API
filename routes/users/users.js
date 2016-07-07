@@ -6,7 +6,6 @@ var express = require('express');
 var router = express.Router();
 var jwt = require('jsonwebtoken');
 var expressjwt = require('express-jwt');
-var Users = require('../../models/users');
 var CryptoJS = require('crypto-js');
 
 
@@ -55,7 +54,7 @@ router.get("/",
         if (req.user.id == "" || req.user.id == undefined)
             return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
         try {
-            Users.findOne({_id : req.user.id, admin : true}, function(err, user) {
+            req.app.get('mongoose').model('users').findOne({_id : req.user.id, admin : true}, function(err, user) {
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
                 else next();
@@ -66,7 +65,7 @@ router.get("/",
     },
     function(req, res, next){
         try {
-            Users.find(function(err, users) {
+            req.app.get('mongoose').model('users').find(function(err, users) {
                 if (err) return next(err);
                 else res.status(200).json({
                     status      : 200,
@@ -154,10 +153,10 @@ router.get("/:idUser",
     },
     function(req, res, next){
         try {
-            Users.findOne({_id: req.user.id}, function(err, user) {
+            req.app.get('mongoose').model('users').findOne({_id: req.user.id}, function(err, user) {
                 if (err) return next(err);
                 else if (user == undefined || user == null) return next(req.app.getError(403, "Forbidden : invalid token", null));
-                else Users.findOne({_id: req.params.idUser}, function(err, userSearch) {
+                else req.app.get('mongoose').model('users').findOne({_id: req.params.idUser}, function(err, userSearch) {
                         if (err) return next(err);
                         else if (userSearch == null || userSearch == undefined) return next(req.app.getError(404, "User not found", null));
                         else
@@ -256,7 +255,7 @@ router.get("/:idUser/applications",
             return next(req.app.getError(404, "Bad request, parameter missing.", null));
         }
         try {
-            Users.findOne({_id : req.user.id}, function(err, user) {
+            req.app.get('mongoose').model('users').findOne({_id : req.user.id}, function(err, user) {
                 if (err) return next(err);
                 else if (user == undefined || user == null) return next(req.app.getError(403, "Unauthorized : invalid token", null));
                 else {
@@ -272,7 +271,7 @@ router.get("/:idUser/applications",
     },
     function(req, res, next) {
         try {
-            Users.findOne({_id : req.params.idUser}, function(err, searchUser) {
+            req.app.get('mongoose').model('users').findOne({_id : req.params.idUser}, function(err, searchUser) {
                 if (err) return next(err);
                 else if (searchUser == undefined || searchUser == null) return next(req.app.getError(404, "User not found", null));
                 else searchUser.populate('applications').exec(function(err, final) {
@@ -349,7 +348,7 @@ router.delete("/:idUser",
             return next(req.app.getError(404, "Bad request, parameter missing.", null));
         }
         try {
-            Users.findOne({_id: req.user.id}, function (err, user) {
+            req.app.get('mongoose').model('users').findOne({_id: req.user.id}, function (err, user) {
                 if (err) return next(err);
                 else if (user == undefined || user == null) return next(req.app.getError(403, "Unauthorized : invalid token", null));
                 else if (user.admin == true || user._id == req.params.idUser) next();
@@ -363,7 +362,7 @@ router.delete("/:idUser",
     },
     function(req, res, next) {
         try {
-            Users.findOneAndRemove({_id: req.params.idUser}, function(err) {
+            req.app.get('mongoose').model('users').findOneAndRemove({_id: req.params.idUser}, function(err) {
                 if (err) return next(err);
                 else res.status(200).json({
                     status  : 200,
@@ -458,7 +457,7 @@ router.put("/:idUser",
             }
         }
         try {
-            Users.findOne({_id : req.user.id}, function(err, user) {
+            req.app.get('mongoose').model('users').findOne({_id : req.user.id}, function(err, user) {
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
                 else if (user.admin == true || user._id == req.params.idUser) {
@@ -472,7 +471,7 @@ router.put("/:idUser",
     },
     function(req, res, next){
         try {
-            Users.findOne({_id: req.params.idUser}, function(err, userSearch) {
+            req.app.get('mongoose').model('users').findOne({_id: req.params.idUser}, function(err, userSearch) {
                 if (err) return next(err);
                 else if (userSearch == null || userSearch == undefined) return next(req.app.getError(404, "User not found", null));
                 else {
@@ -586,7 +585,7 @@ router.post("/",
     },
     function(req,res, next) {
         try {
-            var newUser = new Users();
+            var newUser = new req.app.get('mongoose').model('users')();
             for (var key in req.body) {
                 if (newUser[key] != undefined) {
                     if (key == "password")
@@ -646,7 +645,7 @@ router.get("/:idUser/comments",
             return next(req.app.getError(404, "Bad request, parameter missing.", null));
         }
         try {
-            Users.findOne({_id : req.user.id}, function(err, user) {
+            req.app.get('mongoose').model('users').findOne({_id : req.user.id}, function(err, user) {
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
                 else if (user.admin == true || user._id == req.params.idUser) {
@@ -694,7 +693,7 @@ router.get("/:idUser/comments/:idApp",
             return next(req.app.getError(400, "Bad request : parameter missing.", null));
         }
         try {
-            Users.findOne({_id : req.user.id}, function(err, user) {
+            req.app.get('mongoose').model('users').findOne({_id : req.user.id}, function(err, user) {
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
                 else if (user.admin == true || user._id == req.params.idUser) {
