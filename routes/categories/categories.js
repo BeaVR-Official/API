@@ -246,12 +246,12 @@ router.get("/:idType", function(req, res){
     *     }
 *
 */
-router.get("/categorytypesanddevices", function(req, res){
-    var query = "SELECT * FROM `AllCategoryTypesAndDevices`";
+router.get("/categoriesAndDevices", function(req, res){
+    var query = "SELECT * FROM `AllCategoriesAndDevices`";
 
     req.app.locals.connection.query(query, function(err, rows){
         if (!err)
-            res.json({"Error": false, "Code" : 1, "CategoryTypesAndDevices": rows[0]}); // OK
+            res.json({"Error": false, "Code" : 1, "CategoriesAndDevices": rows[0]}); // OK
         else
             res.json({"Error": true, "Code" : 102}); // Erreur
     });
