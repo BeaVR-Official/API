@@ -5,7 +5,6 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 var ObjectId = Schema.Types.ObjectId;
-var applications = require('./applications');
 
 var userSchema = new Schema({
     pseudo          : { type: String, required: true, unique: true, default:"" },
@@ -15,6 +14,10 @@ var userSchema = new Schema({
     email           : { type: String, default: ""},
     picture         : { type: String, default : "http://www.outsystems.com/PortalTheme/img/UserImage.png?23465" },
     applications    : [{ type: ObjectId, ref: 'applications'}],
+    progressions    : [{
+        application : { type: ObjectId, ref: 'applications'},
+        progression : { type: Number, default: 0}
+    }],
     admin           : { type: Boolean, default: false},
     public          : {
         pseudo      : String,

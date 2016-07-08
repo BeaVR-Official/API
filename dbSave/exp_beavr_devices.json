@@ -1,0 +1,6 @@
+{"_id":{"$oid":"577e828581e6602e28982d5d"},"name":"Leap Motion","image":"","__v":0}
+{"_id":{"$oid":"577e82af81e6602e28982d5f"},"name":"Oculus Rift","image":"","__v":0}
+{"_id":{"$oid":"577e82b681e6602e28982d60"},"name":"HTC Vive","image":"","__v":0}
+{"_id":{"$oid":"577e82bc81e6602e28982d61"},"name":"Samsung VR","image":"","__v":0}
+{"_id":{"$oid":"577e82cb81e6602e28982d62"},"name":"HoloLens","image":"","__v":0}
+{"_id":{"$oid":"577e82d781e6602e28982d63"},"name":"Project Morpheus","image":"","__v":0}

@@ -728,4 +728,74 @@ router.get("/:idUser/comments/:idApp",
     }
 );
 
+
+/* GET /:idUser/progressions/:idApp
+* Récupérer la progression d'un utilisateur sur une application
+* */
+
+router.get('/:idUser/progressions/:idApp',
+    expressjwt({secret: process.env.jwtSecretKey}),
+    function(req, res, next) {
+        try {
+            req.app.get('mongoose').model('users').findOne({_id : req.user.id}, function(err, user) {
+                if (err) return next(err);
+                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
+                else next();
+            });
+        } catch (error) {
+            return next(error);
+        }
+    },
+    function(req, res, next) {
+        try {
+            req.app.get('mongoose').model('users').findOne({ _id : req.user.id, progressions : { application: req.params.idApp }}, function(err, user) {
+                if (err) return next(err);
+                else if (user == undefined || user == null) return next(req.app.getError(404, "Not found : user probably doesn't possess this app."));
+                else res.status(200).json({
+                        status              : 200,
+                        message             : "OK",
+                        data                : {
+                            progression     : user.progressions.filter(function(a) { return a.application == req.params.idApp; })[0]
+                        }
+                    });
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
+);
+
+router.get('/:idUser/progressions',
+    expressjwt({secret: process.env.jwtSecretKey}),
+    function(req, res, next) {
+        try {
+            req.app.get('mongoose').model('users').findOne({_id : req.user.id}, function(err, user) {
+                if (err) return next(err);
+                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
+                else next();
+            });
+        } catch (error) {
+            return next(error);
+        }
+    },
+    function(req, res, next) {
+        try {
+            req.app.get('mongoose').model('users').findOne({ _id : req.user.id }, function(err, user) {
+                if (err) return next(err);
+                else if (user == undefined || user == null) return next(req.app.getError(404, "Not found : user probably doesn't possess this app."));
+                else res.status(200).json({
+                        status          : 200,
+                        message         : "OK",
+                        data            : {
+                            progressions: (user.progressions == undefined || user.progressions == null) ? [] : user.progressions
+                        }
+                    });
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
+);
+
+
 module.exports = router;

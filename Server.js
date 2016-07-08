@@ -4,7 +4,11 @@ var bodyParser  = require("body-parser");
 var mongoose = require("mongoose");
 var fs = require('fs');
 
-
+process.env.mailHost = 'ssl0.ovh.net';
+process.env.mailPassword = 'epitech2017';
+process.env.mailPort = 465;
+process.env.mailUser = 'contact@beavr.fr';
+process.env.jwtSecretKey = 'XSVgtQ\;>1!\,z`\,xDA*zMzs|#\$Iku-`P(l9p.u/1IO][#wKs\cXS\ElxM~P{pw4J';
 process.env.NODE_ENV = "debug";
 
 
@@ -34,10 +38,6 @@ app.use(function (req, res, next) {
     next();
 });
 
-mongoose.connect('mongodb://127.0.0.1/beavr');
-
-app.set('mongoose', mongoose);
-
 app.getError = function(status,message, err) {
     var error = new Error;
     error.message = message;
@@ -47,49 +47,28 @@ app.getError = function(status,message, err) {
 };
 
 fs.readdirSync(__dirname + '/models').forEach(function(filename) {
-   if (~filename.indexOf('.js')) require(__dirname + '/models/' + filename);
+    if (~filename.indexOf('.js')) require(__dirname + '/models/' + filename);
 });
 
-function REST(){
-    var self = this;
-    self.connectMysql();
-}
+mongoose.connect('mongodb://127.0.0.1/beavr');
 
-REST.prototype.connectMysql = function() {
-    var self = this;
-    var pool = mysql.createPool({
-        connectionLimit : process.env.dbConnectionLimit || 100000,
-        host     : process.env.dbHost || '5.196.88.52',
-        user     : process.env.dbUsername,
-        password : process.env.dbPassword,
-        port : process.env.dbPort || 3306,
-        database : process.env.dbName,
-        debug    :  false
+app.set('mongoose', mongoose);
+
+app.use('/api', routes);
+app.use('/api/users', users);
+app.use('/api/applications', applications);
+app.use('/api/devices', devices);
+app.use('/api/categories', categories);
+app.use('/api/comments', comments);
+
+app.use(function(err, req, res, next) {
+    res.status(parseInt((err.status != undefined) ? err.status: 500)).json({
+        message: err.message,
+        error: err
     });
+});
 
-    pool.getConnection(function(err,connection){
-        if(err) {
-            //self.stop(err);
-            console.log(err);
-            //self.connectMysql(); //my modif
-        } else {
-            self.configureExpress(connection);
-        }
-    });
-};
-
-REST.prototype.configureExpress = function(connection) {
-    var self = this;
-    //app.use(bodyParser.urlencoded({ extended: true }));
-    //app.use(bodyParser.json());
-    app.locals.connection = connection;
-    app.use('/api', routes);
-    app.use('/api/users', users);
-    app.use('/api/applications', applications);
-    app.use('/api/devices', devices);
-    app.use('/api/categories', categories);
-    app.use('/api/comments', comments);
-
+function setPathError () {
     app.get('*', function(req, res, next) {
         var err = new Error();
         err.message = "Not found.";
@@ -117,28 +96,15 @@ REST.prototype.configureExpress = function(connection) {
         err.status = 404;
         next(err);
     });
+}
 
-    app.use(function(err, req, res, next) {
-        res.status(parseInt((err.status != undefined) ? err.status: 500)).json({
-            message: err.message,
-            error: err
-        });
-    });
+setPathError();
 
-    self.startServer();
-};
+app.listen(process.env.PORT || 3000,function(){
+    var value = (process.env.PORT == undefined) ? 3000 : process.env.PORT;
+    console.log("All right ! I'm using port " + value  + ".");
+});
 
-REST.prototype.startServer = function() {
-    app.listen(process.env.PORT || 3000,function(){
-        var value = (process.env.PORT == undefined) ? 3000 : process.env.PORT;
-        console.log("All right ! I'm using port " + value  + ".");
-    });
-};
 
-REST.prototype.stop = function(err) {
-    console.log("ISSUE WITH MYSQL \n" + err);
-    //process.exit(1);
-    self.connectMysql();//my modifes
-};
 
-new REST();
+

@@ -16,7 +16,8 @@ var ValidationSchema = new Schema({
         url             : String,
         categoriesName  : [{ type: ObjectId, ref: 'categories'}],
         devicesNames    : [{ type: ObjectId, ref : 'devices'}],
-        authorName      : {type: ObjectId, ref: 'users'}
+        author          : {type: ObjectId, ref: 'users', required: true},
+        price           : {type: Number, required: true}
     },
     device              : {
         name            : { type: String, required: true, unique: true },

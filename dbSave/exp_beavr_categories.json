@@ -1,0 +1,5 @@
+{"_id":{"$oid":"577e89987a108ec22897daaf"},"name":"Mathématique","description":"Les chiffres vous parlent ? ","__v":0}
+{"_id":{"$oid":"577e89b17a108ec22897dab0"},"name":"Géologie","description":"Les pierres ça vous dit ?","__v":0}
+{"_id":{"$oid":"577e89c37a108ec22897dab1"},"name":"Astrologie","description":"Un signe, un destin...","__v":0}
+{"_id":{"$oid":"577e89d07a108ec22897dab2"},"name":"Jeux de cartes","description":"Le poker c'est facile !","__v":0}
+{"_id":{"$oid":"577e89dd7a108ec22897dab3"},"name":"Plomberie","description":"Réparation de la tuyauterie","__v":0}
