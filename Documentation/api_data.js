@@ -3,6 +3,98 @@ define({ "api": [
     "type": "post",
     "url": "/connection",
     "title": "Connexion",
+    "version": "2.0.0",
+    "name": "Connexion",
+    "group": "Autres",
+    "description": "<p>Permet la connexion d'un utilisateur.</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "email",
+            "description": "<p>Adresse mail de l'utilisateur</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "password",
+            "description": "<p>Mot de passe de l'utilisateur</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Succès": [
+          {
+            "group": "Succès",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;false&quot; en cas de réussite</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (1 = Aucune erreur détectée)</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Object",
+            "optional": false,
+            "field": "Token",
+            "description": "<p>Informations de l'utilisateur encrypté en HS256 (HMAC avec SHA-256)</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Succès - Réponse :",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVC\"\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "error": {
+      "fields": {
+        "Erreur": [
+          {
+            "group": "Erreur",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;true&quot; en cas d'erreur</p>"
+          },
+          {
+            "group": "Erreur",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (102 = Erreur lors de la requête, 103 = L'utilisateur n'existe pas, 200 = Mot de passe incorrect)</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Erreur - Réponse :",
+          "content": "{\n  \"Error\" : true,\n  \"Code\" : 102\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "filename": "./routes/routes.js",
+    "groupTitle": "Autres"
+  },
+  {
+    "type": "post",
+    "url": "/connection",
+    "title": "Connexion",
     "version": "1.0.0",
     "name": "Connexion",
     "group": "Autres",
@@ -48,15 +140,15 @@ define({ "api": [
             "group": "Succès",
             "type": "Object",
             "optional": false,
-            "field": "Data",
-            "description": "<p>Informations de l'utilisateur</p>"
+            "field": "Token",
+            "description": "<p>Informations de l'utilisateur encrypté en HS256 (HMAC avec SHA-256)</p>"
           }
         ]
       },
       "examples": [
         {
           "title": "Succès - Réponse :",
-          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Data\" : {\n    \"idUsers\": 1,\n    \"email\": \"j.dujardin@gmail.com\",\n    \"password\": \"a94a8fe5ccb19ba61c4c0873d391e9879ffa353a\",\n    \"lastname\": \"Dujardin\",\n    \"firstname\": \"Jean\",\n    \"role\": 4,\n    \"registration\": \"2015-12-05T06:24:33.000Z\"\n  }\n}",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Data\" : {\n    \"idUser\": 1,\n    \"email\": \"j.dujardin@gmail.com\",\n    \"password\": \"a94a8fe5ccb19ba61c4c0873d391e9879ffa353a\",\n    \"pseudo\" : \"JeanJean\",\n    \"lastName\": \"Dujardin\",\n    \"firstName\": \"Jean\",\n    \"role\": 4,\n    \"registration\": \"2015-12-05T06:24:33.000Z\"\n  }\n}",
           "type": "json"
         }
       ]
@@ -88,7 +180,7 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./_apidoc.js",
     "groupTitle": "Autres"
   },
   {
@@ -187,7 +279,7 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/routes.js",
     "groupTitle": "Autres"
   },
   {
@@ -207,6 +299,13 @@ define({ "api": [
             "optional": false,
             "field": "email",
             "description": "<p>Adresse mail de l'utilisateur</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "pseudo",
+            "description": "<p>Pseudonyme de l'utilisateur</p>"
           },
           {
             "group": "Parameter",
@@ -260,7 +359,7 @@ define({ "api": [
             "type": "Number",
             "optional": false,
             "field": "Code",
-            "description": "<p>Code d'erreur (100 = Un des champs est mal renseigné, 101 = L'utilisateur existe déja)</p>"
+            "description": "<p>Code d'erreur (100 = Un des champs est mal renseigné, 101 = L'utilisateur existe déja, 104 = Le pseudonyme est déjà utilisé)</p>"
           }
         ]
       },
@@ -272,7 +371,7 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/routes.js",
     "groupTitle": "Autres"
   },
   {
@@ -282,7 +381,7 @@ define({ "api": [
     "version": "1.0.0",
     "name": "R_cup_rer_la_liste_des_retours_sur_le_Store",
     "group": "Autres",
-    "description": "<p>Permet récupérer les différents retours sur le Store de la part des utilisateurs.</p>",
+    "description": "<p>Permet de récupérer les différents retours sur le Store de la part des utilisateurs.</p>",
     "success": {
       "fields": {
         "Succès": [
@@ -344,7 +443,79 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/routes.js",
+    "groupTitle": "Autres"
+  },
+  {
+    "type": "get",
+    "url": "/dashboardInfos/",
+    "title": "Récupérer les informations de base du dashboard (doit être administrateur)",
+    "version": "1.0.0",
+    "name": "R_cup_rer_les_informations_de_base_du_dashboard",
+    "group": "Autres",
+    "description": "<p>Permet de récupérer les informations de base à afficher sur le dashboard (nombre d'utilisateurs, etc.).</p>",
+    "success": {
+      "fields": {
+        "Succès": [
+          {
+            "group": "Succès",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;false&quot; en cas de réussite</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (1 = Aucune erreur détectée)</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Object",
+            "optional": false,
+            "field": "DashboardInfos",
+            "description": "<p>Liste des feedbacks</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Succès - Réponse :",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"DashboardInfos\": {\n      \"nbComments\": 42,\n      \"nbApplications\": 42,\n      \"nbPurchases\": 42,\n      \"nbFeedbacks\": 42\n    }\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "error": {
+      "fields": {
+        "Erreur": [
+          {
+            "group": "Erreur",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;true&quot; en cas d'erreur</p>"
+          },
+          {
+            "group": "Erreur",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (102 = Erreur lors de la requête, 105 = L'utilisateur n'a pas les droits)</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Erreur - Réponse :",
+          "content": "{\n  \"Error\" : true,\n  \"Code\" : 102\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "filename": "./routes/routes.js",
     "groupTitle": "Autres"
   },
   {
@@ -422,7 +593,7 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/routes.js",
     "groupTitle": "Autres"
   },
   {
@@ -460,17 +631,30 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/routes.js",
     "groupTitle": "Autres"
   },
   {
-    "type": "get",
+    "type": "post",
     "url": "/email",
     "title": "Vérifier l'existence d'une adresse mail",
     "version": "1.0.0",
     "name": "V_rifier_l_existence_d_une_adresse_mail",
     "group": "Autres",
     "description": "<p>Vérifie si une adresse mail existe bien dans la base de données.</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "email",
+            "description": "<p>Adresse mail de l'utilisateur</p>"
+          }
+        ]
+      }
+    },
     "success": {
       "fields": {
         "Succès": [
@@ -525,7 +709,7 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/routes.js",
     "groupTitle": "Autres"
   },
   {
@@ -551,14 +735,14 @@ define({ "api": [
     "type": "",
     "url": "",
     "version": "0.0.0",
-    "filename": "./Generated/main.js",
-    "group": "C__wamp_www_BeaVRWebStore_APImysql_Doc_Generated_main_js",
-    "groupTitle": "C__wamp_www_BeaVRWebStore_APImysql_Doc_Generated_main_js",
+    "filename": "./Documentation/main.js",
+    "group": "C__wamp_www_API_Documentation_main_js",
+    "groupTitle": "C__wamp_www_API_Documentation_main_js",
     "name": ""
   },
   {
     "type": "post",
-    "url": "/applications/:idApplication",
+    "url": "/applications/",
     "title": "Ajouter une application",
     "version": "1.0.0",
     "name": "Ajout_d_une_application",
@@ -583,6 +767,13 @@ define({ "api": [
           },
           {
             "group": "Parameter",
+            "type": "Date",
+            "optional": false,
+            "field": "creationdate",
+            "description": "<p>Date de création de l'application</p>"
+          },
+          {
+            "group": "Parameter",
             "type": "Number",
             "optional": false,
             "field": "price",
@@ -592,28 +783,7 @@ define({ "api": [
             "group": "Parameter",
             "type": "Number",
             "optional": false,
-            "field": "headDevice",
-            "description": "<p>ID du casque de réalité virtuelle</p>"
-          },
-          {
-            "group": "Parameter",
-            "type": "Number",
-            "optional": false,
-            "field": "handDevice",
-            "description": "<p>ID du matériel de réalité virtuelle pour les mains</p>"
-          },
-          {
-            "group": "Parameter",
-            "type": "Number",
-            "optional": false,
-            "field": "category",
-            "description": "<p>Catégorie de l'application</p>"
-          },
-          {
-            "group": "Parameter",
-            "type": "Number",
-            "optional": false,
-            "field": "author",
+            "field": "creator",
             "description": "<p>ID de l'auteur de l'application</p>"
           },
           {
@@ -622,6 +792,20 @@ define({ "api": [
             "optional": false,
             "field": "url",
             "description": "<p>Lien vers l'application</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Number",
+            "optional": false,
+            "field": "state",
+            "description": "<p>Statut de l'application</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Number",
+            "optional": false,
+            "field": "logo",
+            "description": "<p>ID du logo de l'application</p>"
           }
         ]
       }
@@ -680,7 +864,7 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/applications/applications.js",
     "groupTitle": "Gestion_Applications"
   },
   {
@@ -765,7 +949,236 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/applications/applications.js",
+    "groupTitle": "Gestion_Applications"
+  },
+  {
+    "type": "get",
+    "url": "/applications/categories/",
+    "title": "Liste des catégories",
+    "version": "1.0.0",
+    "name": "Liste_des_applications",
+    "group": "Gestion_Applications",
+    "description": "<p>Retourne la liste de toutes les catégories d'application.</p>",
+    "success": {
+      "fields": {
+        "Succès": [
+          {
+            "group": "Succès",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;false&quot; en cas de réussite</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (1 = Aucune erreur détectée)</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Object[]",
+            "optional": false,
+            "field": "States",
+            "description": "<p>Liste des catégories</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Succès - Réponse :",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"States\" : [\n    {\n      \"idCategory\": \"1\",\n      \"name\": \"Mathématique\",\n      \"description\": \"Les chiffres vous parlent ?\",\n        type: 2\n    },\n    ...\n  ]\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "error": {
+      "fields": {
+        "Erreur": [
+          {
+            "group": "Erreur",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;true&quot; en cas d'erreur</p>"
+          },
+          {
+            "group": "Erreur",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (102 = Erreur lors de la requête)</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Erreur - Réponse :",
+          "content": "{\n  \"Error\" : true,\n  \"Code\" : 102\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "filename": "./routes/applications/applications.js",
+    "groupTitle": "Gestion_Applications"
+  },
+  {
+    "type": "get",
+    "url": "/applications/devices/",
+    "title": "Liste des devices",
+    "version": "1.0.0",
+    "name": "Liste_des_applications",
+    "group": "Gestion_Applications",
+    "description": "<p>Retourne la liste de toutes les devices d'application.</p>",
+    "success": {
+      "fields": {
+        "Succès": [
+          {
+            "group": "Succès",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;false&quot; en cas de réussite</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (1 = Aucune erreur détectée)</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Object[]",
+            "optional": false,
+            "field": "Devices",
+            "description": "<p>Liste des devices</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Succès - Réponse :",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"States\" : [\n    {\n      \"idDevice\": \"1\",\n      \"name\": \"LeapMotion\",\n      \"image\": \"masuperleap.jpg\"\n    },\n    ...\n  ]\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "error": {
+      "fields": {
+        "Erreur": [
+          {
+            "group": "Erreur",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;true&quot; en cas d'erreur</p>"
+          },
+          {
+            "group": "Erreur",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (102 = Erreur lors de la requête)</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Erreur - Réponse :",
+          "content": "{\n  \"Error\" : true,\n  \"Code\" : 102\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "filename": "./routes/applications/applications.js",
+    "groupTitle": "Gestion_Applications"
+  },
+  {
+    "type": "get",
+    "url": "/applications/state/:state",
+    "title": "Liste des application pour un état donné",
+    "version": "1.0.0",
+    "name": "Liste_des_applications",
+    "group": "Gestion_Applications",
+    "description": "<p>Retourne la liste de toutes les applications pour un état donné</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "Number",
+            "optional": false,
+            "field": "state",
+            "description": "<p>Etat de l'application</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Succès": [
+          {
+            "group": "Succès",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;false&quot; en cas de réussite</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (1 = Aucune erreur détectée)</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Object[]",
+            "optional": false,
+            "field": "Devices",
+            "description": "<p>Liste des devices</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Succès - Réponse :",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"States\" : [\n    {\n      \"idDevice\": \"1\",\n      \"name\": \"LeapMotion\",\n      \"image\": \"masuperleap.jpg\"\n    },\n    ...\n  ]\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "error": {
+      "fields": {
+        "Erreur": [
+          {
+            "group": "Erreur",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;true&quot; en cas d'erreur</p>"
+          },
+          {
+            "group": "Erreur",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (102 = Erreur lors de la requête)</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Erreur - Réponse :",
+          "content": "{\n  \"Error\" : true,\n  \"Code\" : 102\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "filename": "./routes/applications/applications.js",
     "groupTitle": "Gestion_Applications"
   },
   {
@@ -837,12 +1250,84 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/applications/applications.js",
+    "groupTitle": "Gestion_Applications"
+  },
+  {
+    "type": "get",
+    "url": "/applications/states/",
+    "title": "Liste des états",
+    "version": "1.0.0",
+    "name": "Liste_des_applications",
+    "group": "Gestion_Applications",
+    "description": "<p>Retourne la liste de toutes les états d'application.</p>",
+    "success": {
+      "fields": {
+        "Succès": [
+          {
+            "group": "Succès",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;false&quot; en cas de réussite</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (1 = Aucune erreur détectée)</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Object[]",
+            "optional": false,
+            "field": "States",
+            "description": "<p>Liste des états</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Succès - Réponse :",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"States\" : [\n    {\n      \"id\": \"1\",\n      \"state\": \"Validée\",\n    },\n    ...\n  ]\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "error": {
+      "fields": {
+        "Erreur": [
+          {
+            "group": "Erreur",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;true&quot; en cas d'erreur</p>"
+          },
+          {
+            "group": "Erreur",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (102 = Erreur lors de la requête)</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Erreur - Réponse :",
+          "content": "{\n  \"Error\" : true,\n  \"Code\" : 102\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "filename": "./routes/applications/applications.js",
     "groupTitle": "Gestion_Applications"
   },
   {
     "type": "put",
-    "url": "/applications/:idApplication",
+    "url": "/applications/:idApplication/progressions",
     "title": "Mettre à jour la progression d'une application",
     "version": "1.0.0",
     "name": "Mettre___jour_la_progression",
@@ -897,7 +1382,7 @@ define({ "api": [
       "examples": [
         {
           "title": "Succès - Réponse :",
-          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Applications\" : {\n      \"name\": \"Application\",\n      \"description\": \"Ceci est la description de l'application\",\n      \"creationDate\": \"2016-01-31T15:00:00.000Z\",\n      \"price\": 29.99,\n      \"logo\": \"Url du logo\",\n      \"url\": \"Lien vers l'application\",\n      \"categoriesNames\": \"Mathématique, Astrologie\",\n      \"devicesNames\": \"Leap Motion\",\n      \"authorName\": \"Jean Dujardin\"\n  }\n}",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1\n}",
           "type": "json"
         }
       ]
@@ -929,12 +1414,12 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/applications/applications.js",
     "groupTitle": "Gestion_Applications"
   },
   {
     "type": "put",
-    "url": "/updateApplicationInfos",
+    "url": "/applications/:idApplication",
     "title": "Modifier les informations d'une application",
     "version": "1.0.0",
     "name": "Modifier_les_informations_d_une_application",
@@ -1049,12 +1534,12 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/applications/applications.js",
     "groupTitle": "Gestion_Applications"
   },
   {
     "type": "get",
-    "url": "/progression/:idApplication",
+    "url": "/applications/:idApplication/progressions",
     "title": "Récupérer la progression",
     "version": "1.0.0",
     "name": "R_cup_rer_la_progression",
@@ -1127,12 +1612,12 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/applications/applications.js",
     "groupTitle": "Gestion_Applications"
   },
   {
     "type": "post",
-    "url": "/submitApplication",
+    "url": "/applications/",
     "title": "Soumettre une application",
     "version": "1.0.0",
     "name": "Soumettre_une_application",
@@ -1261,7 +1746,7 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/applications/applications.js",
     "groupTitle": "Gestion_Applications"
   },
   {
@@ -1339,30 +1824,17 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/applications/applications.js",
     "groupTitle": "Gestion_Applications"
   },
   {
     "type": "put",
-    "url": "/validateApplicationSubmission",
+    "url": "/applications/:idApplication/validateApplicationSubmission",
     "title": "Valide une application soumise par un développeur",
     "version": "1.0.0",
     "name": "Valide_une_application_soumise_par_un_d_veloppeur",
     "group": "Gestion_Applications",
     "description": "<p>Valide une application soumise par un développeur.</p>",
-    "parameter": {
-      "fields": {
-        "Parameter": [
-          {
-            "group": "Parameter",
-            "type": "Number",
-            "optional": false,
-            "field": "idApp",
-            "description": "<p>ID de l'application</p>"
-          }
-        ]
-      }
-    },
     "success": {
       "fields": {
         "Succès": [
@@ -1417,12 +1889,12 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/applications/applications.js",
     "groupTitle": "Gestion_Applications"
   },
   {
     "type": "post",
-    "url": "/categoryTypes",
+    "url": "/categories/categoryTypes",
     "title": "Ajouter un thème",
     "version": "1.0.0",
     "name": "Ajouter_un_th_me",
@@ -1495,7 +1967,7 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/categories/categories.js",
     "groupTitle": "Gestion_Categories"
   },
   {
@@ -1535,7 +2007,7 @@ define({ "api": [
       "examples": [
         {
           "title": "Succès - Réponse :",
-          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Categories\": [\n    {\n      \"idCategories\": 1,\n      \"name\": \"Mathématique\",\n      \"description\": \"Les chiffres vous parlent ? \",\n      \"type\": 2\n    },\n    {\n      \"idCategories\": 2,\n      \"name\": \"Géologie\",\n      \"description\": \"Les pierres ça vous dit \",\n      \"type\": 2\n    },\n    ...\n  ]\n}",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Categories\": [\n    {\n      \"idCategorie\": 1,\n      \"name\": \"Mathématique\",\n      \"description\": \"Les chiffres vous parlent ? \",\n      \"type\": 2\n    },\n    {\n      \"idCategorie\": 2,\n      \"name\": \"Géologie\",\n      \"description\": \"Les pierres ça vous dit \",\n      \"type\": 2\n    },\n    ...\n  ]\n}",
           "type": "json"
         }
       ]
@@ -1567,12 +2039,12 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/categories/categories.js",
     "groupTitle": "Gestion_Categories"
   },
   {
     "type": "get",
-    "url": "/categoryTypes/",
+    "url": "/categories/categoryTypes/",
     "title": "Liste des thèmes",
     "version": "1.0.0",
     "name": "Liste_des_th_mes",
@@ -1607,7 +2079,7 @@ define({ "api": [
       "examples": [
         {
           "title": "Succès - Réponse :",
-          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Categories\": [\n     {\n      \"idCategoryTypes\": 1,\n      \"description\": \"Sport\"\n     },\n     {\n       \"idCategoryTypes\": 2,\n       \"description\": \"Sciences\"\n     },\n    ...\n  ]\n}",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Categories\": [\n     {\n      \"idCategoryType\": 1,\n      \"description\": \"Sport\"\n     },\n     {\n       \"idCategoryType\": 2,\n       \"description\": \"Sciences\"\n     },\n    ...\n  ]\n}",
           "type": "json"
         }
       ]
@@ -1639,12 +2111,12 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/categories/categories.js",
     "groupTitle": "Gestion_Categories"
   },
   {
     "type": "get",
-    "url": "/categories/:type",
+    "url": "/categories/:idType",
     "title": "Récupérer les catégories d'un thème",
     "version": "1.0.0",
     "name": "R_cup_rer_les_cat_gories_d_un_th_me",
@@ -1692,7 +2164,7 @@ define({ "api": [
       "examples": [
         {
           "title": "Succès - Réponse :",
-          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Categories\": [\n    {\n      \"idCategories\": 1,\n      \"name\": \"Mathématique\",\n      \"description\": \"Les chiffres vous parlent ? \",\n      \"type\": 2\n    },\n    {\n      \"idCategories\": 2,\n      \"name\": \"Géologie\",\n      \"description\": \"Les pierres ça vous dit \",\n      \"type\": 2\n    },\n    ...\n  ]\n}",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Categories\": [\n    {\n      \"idCategorie\": 1,\n      \"name\": \"Mathématique\",\n      \"description\": \"Les chiffres vous parlent ? \",\n      \"type\": 2\n    },\n    {\n      \"idCategorie\": 2,\n      \"name\": \"Géologie\",\n      \"description\": \"Les pierres ça vous dit \",\n      \"type\": 2\n    },\n    ...\n  ]\n}",
           "type": "json"
         }
       ]
@@ -1724,12 +2196,12 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/categories/categories.js",
     "groupTitle": "Gestion_Categories"
   },
   {
     "type": "get",
-    "url": "/categorytypesanddevices",
+    "url": "/categories/categoriesAndDevices",
     "title": "Récupérer les thèmes et les devices",
     "version": "1.0.0",
     "name": "R_cup_rer_les_th_mes_et_les_devices",
@@ -1764,7 +2236,7 @@ define({ "api": [
       "examples": [
         {
           "title": "Succès - Réponse :",
-          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Categories\": [\n    {\n      \"idCategories\": 1,\n      \"name\": \"Mathématique\",\n      \"CategoryTypesAndDevices\": {\n        \"CategoryTypes\": \"Toutes, Sciences, Sports, Mécanique\",\n        \"Devices\": \"Leap Motion, Oculus Rift, HTC Vive, Samsung VR, HoloLens, Project Morpheus\"\n       }\n    }\n}",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"CategoryTypesAndDevices\": {\n        \"CategoryTypes\": \"Toutes, Sciences, Sports, Mécanique\",\n        \"Devices\": \"Leap Motion, Oculus Rift, HTC Vive, Samsung VR, HoloLens, Project Morpheus\"\n   }\n}",
           "type": "json"
         }
       ]
@@ -1796,12 +2268,176 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/categories/categories.js",
     "groupTitle": "Gestion_Categories"
   },
   {
     "type": "get",
-    "url": "/getComments/:idApp",
+    "url": "/comments/",
+    "title": "Liste des commentaires",
+    "version": "1.0.0",
+    "name": "Liste_des_commentaires",
+    "group": "Gestion_Commentaires",
+    "description": "<p>Retourne la liste de toutes les commentaires.</p>",
+    "success": {
+      "fields": {
+        "Succès": [
+          {
+            "group": "Succès",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;false&quot; en cas de réussite</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (1 = Aucune erreur détectée)</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Object[]",
+            "optional": false,
+            "field": "Comments",
+            "description": "<p>Liste des commentaires</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Succès - Réponse :",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Comments\" : [\n    {\n      \"id\": 1,\n      \"comment\": \"lorem impsu\",\n      \"rating\": \"5\",\n      \"author\": Jean Dujardin,\n      \"application\": \"1\",\n      \"applicationName\" : \"Superbe app\"\n      \"date\": \"2016-04-15 03:48:32\",\n      \"title\": \"j'adore\",\n      \"pseudo\": \"JeanDu\",\n      \"email\": \"jeandujardin@gmail.com\"\n    },\n    ...\n  ]\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "error": {
+      "fields": {
+        "Erreur": [
+          {
+            "group": "Erreur",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;true&quot; en cas d'erreur</p>"
+          },
+          {
+            "group": "Erreur",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (102 = Erreur lors de la requête)</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Erreur - Réponse :",
+          "content": "{\n  \"Error\" : true,\n  \"Code\" : 102\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "filename": "./routes/comments/comments.js",
+    "groupTitle": "Gestion_Commentaires"
+  },
+  {
+    "type": "get",
+    "url": "/comments/:idApp/:limit",
+    "title": "Liste des commentaires d'une application",
+    "version": "1.0.0",
+    "name": "Liste_des_commentaires_d_une_application",
+    "group": "Gestion_Commentaires",
+    "description": "<p>Récupérer la liste des commentaires d'une application donnée avec une limite.</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "Number",
+            "optional": false,
+            "field": "idApp",
+            "description": "<p>ID de l'application</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Number",
+            "optional": false,
+            "field": "limit",
+            "description": "<p>Limite au nombre de commentaires retournés</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Succès": [
+          {
+            "group": "Succès",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;false&quot; en cas de réussite</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (1 = Aucune erreur détectée)</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Object[]",
+            "optional": false,
+            "field": "Comments",
+            "description": "<p>Liste des commentaires</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Succès - Réponse :",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Comments\" : [\n    {\n      \"idComment\": 1,\n      \"comment\": \"Ceci est un commentaire\",\n      \"rating\": 5,\n      \"author\": 1,\n      \"picture_profile\": \"Lien vers la photo de profil\",\n      \"application\": 1,\n      \"date\": \"2016-04-14T18:51:57.000Z\",\n      \"title\": \"Titre\"\n    },\n    ...\n  ]\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "error": {
+      "fields": {
+        "Erreur": [
+          {
+            "group": "Erreur",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;true&quot; en cas d'erreur</p>"
+          },
+          {
+            "group": "Erreur",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (102 = Erreur lors de la requête)</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Erreur - Réponse :",
+          "content": "{\n  \"Error\" : true,\n  \"Code\" : 102\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "filename": "./routes/comments/comments.js",
+    "groupTitle": "Gestion_Commentaires"
+  },
+  {
+    "type": "get",
+    "url": "/comments/:idApp",
     "title": "Liste des commentaires d'une application",
     "version": "1.0.0",
     "name": "Liste_des_commentaires_d_une_application",
@@ -1881,17 +2517,17 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/comments/comments.js",
     "groupTitle": "Gestion_Commentaires"
   },
   {
-    "type": "post",
-    "url": "/publishComment",
-    "title": "Publier un commentaire",
+    "type": "put",
+    "url": "/comments/:idComment",
+    "title": "Modifier un commentaire",
     "version": "1.0.0",
-    "name": "Publier_un_commentaire",
+    "name": "Modifier_un_commentaire",
     "group": "Gestion_Commentaires",
-    "description": "<p>Poste un commentaire sur une application.</p>",
+    "description": "<p>Modifier un commentaire sur une application.</p>",
     "parameter": {
       "fields": {
         "Parameter": [
@@ -1913,15 +2549,15 @@ define({ "api": [
             "group": "Parameter",
             "type": "Number",
             "optional": false,
-            "field": "idUser",
-            "description": "<p>ID de l'utilisateur</p>"
+            "field": "application",
+            "description": "<p>ID de l'application</p>"
           },
           {
             "group": "Parameter",
-            "type": "Number",
+            "type": "String",
             "optional": false,
-            "field": "idApp",
-            "description": "<p>ID de l'application</p>"
+            "field": "title",
+            "description": "<p>Titre du commentaire</p>"
           }
         ]
       }
@@ -1980,12 +2616,118 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/comments/comments.js",
+    "groupTitle": "Gestion_Commentaires"
+  },
+  {
+    "type": "post",
+    "url": "/comments/:idApp",
+    "title": "Publier un commentaire",
+    "version": "1.0.0",
+    "name": "Publier_un_commentaire",
+    "group": "Gestion_Commentaires",
+    "description": "<p>Poste un commentaire sur une application.</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "comment",
+            "description": "<p>Commentaire de l'utilisateur</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Number",
+            "optional": false,
+            "field": "rating",
+            "description": "<p>Note donnée par l'utilisateur à l'application</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Number",
+            "optional": false,
+            "field": "author",
+            "description": "<p>ID de l'utilisateur</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Number",
+            "optional": false,
+            "field": "application",
+            "description": "<p>ID de l'application</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "title",
+            "description": "<p>Titre du commentaire</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Succès": [
+          {
+            "group": "Succès",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;false&quot; en cas de réussite</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (1 = Aucune erreur détectée)</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Succès - Réponse :",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "error": {
+      "fields": {
+        "Erreur": [
+          {
+            "group": "Erreur",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;true&quot; en cas d'erreur</p>"
+          },
+          {
+            "group": "Erreur",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (102 = Erreur lors de la requête, 103 = L'adresse mail n'existe pas, 202 = Le mail de réinitialisation n'a pas pu être envoyé)</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Erreur - Réponse :",
+          "content": "{\n  \"Error\" : true,\n  \"Code\" : 102\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "filename": "./routes/comments/comments.js",
     "groupTitle": "Gestion_Commentaires"
   },
   {
     "type": "delete",
-    "url": "/removeComment/:idComment",
+    "url": "/comment/:idApp/:idComment",
     "title": "Supprimer un commentaire",
     "version": "1.0.0",
     "name": "Supprimer_un_commentaire",
@@ -2058,92 +2800,7 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
-    "groupTitle": "Gestion_Commentaires"
-  },
-  {
-    "type": "post",
-    "url": "/hasCommented",
-    "title": "Vérifier si un utilisateur a déjà commenté une application",
-    "version": "1.0.0",
-    "name": "V_rifier_si_un_utilisateur_a_d_j__comment__une_application",
-    "group": "Gestion_Commentaires",
-    "description": "<p>Permet de vérifier si un utilisateur a déjà commenté une application ou non.</p>",
-    "parameter": {
-      "fields": {
-        "Parameter": [
-          {
-            "group": "Parameter",
-            "type": "Number",
-            "optional": false,
-            "field": "idApplication",
-            "description": "<p>ID de l'application</p>"
-          },
-          {
-            "group": "Parameter",
-            "type": "Number",
-            "optional": false,
-            "field": "idAuthor",
-            "description": "<p>ID de l'auteur</p>"
-          }
-        ]
-      }
-    },
-    "success": {
-      "fields": {
-        "Succès": [
-          {
-            "group": "Succès",
-            "type": "Boolean",
-            "optional": false,
-            "field": "Error",
-            "description": "<p>Retourne &quot;false&quot; en cas de réussite</p>"
-          },
-          {
-            "group": "Succès",
-            "type": "Number",
-            "optional": false,
-            "field": "Code",
-            "description": "<p>Code d'erreur (1 = Aucune erreur détectée)</p>"
-          }
-        ]
-      },
-      "examples": [
-        {
-          "title": "Succès - Réponse :",
-          "content": "{\n  \"Error\": false,\n  \"Code\" : 1\n}",
-          "type": "json"
-        }
-      ]
-    },
-    "error": {
-      "fields": {
-        "Erreur": [
-          {
-            "group": "Erreur",
-            "type": "Boolean",
-            "optional": false,
-            "field": "Error",
-            "description": "<p>Retourne &quot;true&quot; en cas d'erreur</p>"
-          },
-          {
-            "group": "Erreur",
-            "type": "Number",
-            "optional": false,
-            "field": "Code",
-            "description": "<p>Code d'erreur (102 = Erreur lors de la requête, 103 = L'utilisateur n'existe pas)</p>"
-          }
-        ]
-      },
-      "examples": [
-        {
-          "title": "Erreur - Réponse :",
-          "content": "{\n  \"Error\" : true,\n  \"Code\" : 102\n}",
-          "type": "json"
-        }
-      ]
-    },
-    "filename": "./REST.js",
+    "filename": "./routes/comments/comments.js",
     "groupTitle": "Gestion_Commentaires"
   },
   {
@@ -2228,7 +2885,7 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/devices/devices.js",
     "groupTitle": "Gestion_Devices"
   },
   {
@@ -2268,7 +2925,7 @@ define({ "api": [
       "examples": [
         {
           "title": "Succès - Réponse :",
-          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Devices\": [\n    {\n      \"idDevices\": 1,\n      \"name\": \"Leap Motion\",\n      \"image\": \"Lien vers l'image\"\n    },\n    {\n      \"idDevices\": 2,\n      \"name\": \"Oculus Rift\",\n      \"image\": \"Lien vers l'image\"\n    },\n    ...\n ]\n}",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Devices\": [\n    {\n      \"idDevice\": 1,\n      \"name\": \"Leap Motion\",\n      \"image\": \"Lien vers l'image\"\n    },\n    {\n      \"idDevice\": 2,\n      \"name\": \"Oculus Rift\",\n      \"image\": \"Lien vers l'image\"\n    },\n    ...\n ]\n}",
           "type": "json"
         }
       ]
@@ -2300,7 +2957,7 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/devices/devices.js",
     "groupTitle": "Gestion_Devices"
   },
   {
@@ -2392,12 +3049,12 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/devices/devices.js",
     "groupTitle": "Gestion_Devices"
   },
   {
     "type": "get",
-    "url": "/devices/idDevices",
+    "url": "/devices/:idDevice",
     "title": "Récupérer les informations d'un device",
     "version": "1.0.0",
     "name": "R_cup_rer_les_informations_d_un_device_donn_",
@@ -2410,7 +3067,7 @@ define({ "api": [
             "group": "Parameter",
             "type": "Number",
             "optional": false,
-            "field": "idDevices",
+            "field": "idDevice",
             "description": "<p>ID du device</p>"
           }
         ]
@@ -2477,12 +3134,12 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/devices/devices.js",
     "groupTitle": "Gestion_Devices"
   },
   {
     "type": "delete",
-    "url": "/devices/:idDevices",
+    "url": "/devices/:idDevice",
     "title": "Supprimer un device",
     "version": "1.0.0",
     "name": "Suppression_d_un_device",
@@ -2495,7 +3152,7 @@ define({ "api": [
             "group": "Parameter",
             "type": "Number",
             "optional": false,
-            "field": "idDevices",
+            "field": "idDevice",
             "description": "<p>ID du device</p>"
           }
         ]
@@ -2555,97 +3212,12 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/devices/devices.js",
     "groupTitle": "Gestion_Devices"
   },
   {
-    "type": "post",
-    "url": "/users/",
-    "title": "Ajouter un utilisateur",
-    "version": "1.0.0",
-    "name": "Ajout_d_un_utilisateur",
-    "group": "Gestion_Utilisateurs",
-    "description": "<p>Ajoute un utilisateur après avoir vérifier qu'il n'existait pas.</p>",
-    "parameter": {
-      "fields": {
-        "Parameter": [
-          {
-            "group": "Parameter",
-            "type": "String",
-            "optional": false,
-            "field": "email",
-            "description": "<p>Adresse mail de l'utilisateur</p>"
-          },
-          {
-            "group": "Parameter",
-            "type": "String",
-            "optional": false,
-            "field": "password",
-            "description": "<p>Mot de passe de l'utilisateur</p>"
-          }
-        ]
-      }
-    },
-    "success": {
-      "fields": {
-        "Succès": [
-          {
-            "group": "Succès",
-            "type": "Boolean",
-            "optional": false,
-            "field": "Error",
-            "description": "<p>Retourne &quot;false&quot; en cas de réussite</p>"
-          },
-          {
-            "group": "Succès",
-            "type": "Number",
-            "optional": false,
-            "field": "Code",
-            "description": "<p>Code d'erreur (1 = Aucune erreur détectée)</p>"
-          }
-        ]
-      },
-      "examples": [
-        {
-          "title": "Succès - Réponse :",
-          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n}",
-          "type": "json"
-        }
-      ]
-    },
-    "error": {
-      "fields": {
-        "Erreur": [
-          {
-            "group": "Erreur",
-            "type": "Boolean",
-            "optional": false,
-            "field": "Error",
-            "description": "<p>Retourne &quot;true&quot; en cas d'erreur</p>"
-          },
-          {
-            "group": "Erreur",
-            "type": "Number",
-            "optional": false,
-            "field": "Code",
-            "description": "<p>Code d'erreur (101 = L'utilisateur existe déjà, 102 = Erreur lors de la requête)</p>"
-          }
-        ]
-      },
-      "examples": [
-        {
-          "title": "Erreur - Réponse :",
-          "content": "{\n  \"Error\" : true,\n  \"Code\" : 101\n}",
-          "type": "json"
-        }
-      ]
-    },
-    "filename": "./REST.js",
-    "groupTitle": "Gestion_Utilisateurs"
-  },
-  {
     "type": "get",
-    "url": "/users/:idUsers",
+    "url": "/users/:idUser",
     "title": "Récupérer les informations d'un utilisateur",
     "version": "1.0.0",
     "name": "Informations_d_un_utilisateur",
@@ -2658,7 +3230,7 @@ define({ "api": [
             "group": "Parameter",
             "type": "Number",
             "optional": false,
-            "field": "idUsers",
+            "field": "idUser",
             "description": "<p>ID de l'utilisateur souhaité</p>"
           }
         ]
@@ -2693,7 +3265,79 @@ define({ "api": [
       "examples": [
         {
           "title": "Succès - Réponse :",
-          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Users\" : {\n      \"idUsers\": 1,\n      \"email\": \"j.dujardin@gmail.com\",\n      \"password\": \"a94a8fe5ccb19ba61c4c0873d391e9879ffa353a\",\n      \"lastname\": \"Dujardin\",\n      \"firstname\": \"Jean\",\n      \"role\": 4,\n      \"registration\": \"2015-12-05T06:24:33.000Z\"\n  }\n}",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Users\" : {\n      \"idUser\": 1,\n      \"email\": \"j.dujardin@gmail.com\",\n      \"pseudo\": \"JeanJean\",\n      \"lastName\": \"Dujardin\",\n      \"firstName\": \"Jean\",\n      \"role\": 4,\n      \"registration\": \"2015-12-05T06:24:33.000Z\"\n  }\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "error": {
+      "fields": {
+        "Erreur": [
+          {
+            "group": "Erreur",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;true&quot; en cas d'erreur</p>"
+          },
+          {
+            "group": "Erreur",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (102 = Erreur lors de la requête, 103 = L'utilisateur n'existe pas, 105 = L'utilisateur n'a pas les droits)</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Erreur - Réponse :",
+          "content": "{\n  \"Error\" : true,\n  \"Code\" : 102\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "filename": "./routes/users/users.js",
+    "groupTitle": "Gestion_Utilisateurs"
+  },
+  {
+    "type": "get",
+    "url": "/users/applications/",
+    "title": "Récupérer les applications d'un utilisateur",
+    "version": "1.0.0",
+    "name": "Informations_d_un_utilisateur",
+    "group": "Gestion_Utilisateurs",
+    "description": "<p>Retourne les applications de l'utilisateur possédant le token passé en header.</p>",
+    "success": {
+      "fields": {
+        "Succès": [
+          {
+            "group": "Succès",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;false&quot; en cas de réussite</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (1 = Aucune erreur détectée)</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Object",
+            "optional": false,
+            "field": "Users",
+            "description": "<p>Applications de l'utilisateur</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Succès - Réponse :",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Users\" : {\n      \"id\": 1,\n      \"name\": \"Superbe app\",\n      \"description\": \"Description de ma superbe app\",\n      \"buyer\": \"28\",\n      \"retailer\": \"12\",\n      \"logo\": \"http://beavr.fr/media/masuperbeapp.png\",\n      \"url\": \"http://beavr.fr/app/masuperbeapp\"\n  }\n}",
           "type": "json"
         }
       ]
@@ -2725,7 +3369,7 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/users/users.js",
     "groupTitle": "Gestion_Utilisateurs"
   },
   {
@@ -2765,7 +3409,79 @@ define({ "api": [
       "examples": [
         {
           "title": "Succès - Réponse :",
-          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Users\" : [\n    {\n      \"idUsers\": 1,\n      \"email\": \"j.dujardin@gmail.com\",\n      \"password\": \"a94a8fe5ccb19ba61c4c0873d391e9879ffa353a\",\n      \"lastname\": \"Dujardin\",\n      \"firstname\": \"Jean\",\n      \"role\": 4,\n      \"registration\": \"2015-12-05T06:24:33.000Z\"\n    },\n    ...\n  ]\n}",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Users\" : [\n    {\n      \"idUser\": 1,\n      \"email\": \"j.dujardin@gmail.com\",\n      \"pseudo\": \"JeanJean\",\n      \"lastName\": \"Dujardin\",\n      \"firstName\": \"Jean\",\n      \"role\": 4,\n      \"registration\": \"2015-12-05T06:24:33.000Z\"\n    },\n    ...\n  ]\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "error": {
+      "fields": {
+        "Erreur": [
+          {
+            "group": "Erreur",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;true&quot; en cas d'erreur</p>"
+          },
+          {
+            "group": "Erreur",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (102 = Erreur lors de la requête, 105 = L'utilisateur n'a pas les droits)</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Erreur - Réponse :",
+          "content": "{\n  \"Error\" : true,\n  \"Code\" : 102\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "filename": "./routes/users/users.js",
+    "groupTitle": "Gestion_Utilisateurs"
+  },
+  {
+    "type": "get",
+    "url": "/users/roles/",
+    "title": "Liste des rôles",
+    "version": "1.0.0",
+    "name": "Liste_des_utilisateurs",
+    "group": "Gestion_Utilisateurs",
+    "description": "<p>Retourne la liste de toutes les rôles d'utilisateurs.</p>",
+    "success": {
+      "fields": {
+        "Succès": [
+          {
+            "group": "Succès",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;false&quot; en cas de réussite</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (1 = Aucune erreur détectée)</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Object[]",
+            "optional": false,
+            "field": "Roles",
+            "description": "<p>Liste des rôles</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Succès - Réponse :",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Roles\" : [\n    {\n      \"idRole\": \"1\",\n      \"role\": \"Administrator\",\n      \"description\": \"Equipe qui développe le projet\"\n    },\n    ...\n  ]\n}",
           "type": "json"
         }
       ]
@@ -2797,12 +3513,139 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/users/users.js",
     "groupTitle": "Gestion_Utilisateurs"
   },
   {
     "type": "put",
-    "url": "/users/:idUsers",
+    "url": "/users/:idUser",
+    "title": "Modifier un utilisateur",
+    "version": "2.0.0",
+    "name": "Modification_des_informations_d_un_utilisateur",
+    "group": "Gestion_Utilisateurs",
+    "description": "<p>Modifier les informations d'un utilisateur donné.</p>",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "email",
+            "description": "<p>Adresse mail de l'utilisateur</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "password",
+            "description": "<p>Mot de passe de l'utilisateur</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "name",
+            "description": "<p>Nom de l'utilisateur</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "firstname",
+            "description": "<p>Prénom de l'utilisateur</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Number",
+            "optional": false,
+            "field": "role",
+            "description": "<p>Rôle de l'utilisateur</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "profilePicture",
+            "description": "<p>URL vers la photo de profil de l'utilisateur</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "Number",
+            "optional": false,
+            "field": "idUser",
+            "description": "<p>ID de l'utilisateur souhaité</p>"
+          }
+        ]
+      }
+    },
+    "success": {
+      "fields": {
+        "Succès": [
+          {
+            "group": "Succès",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;false&quot; en cas de réussite</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (1 = Aucune erreur détectée)</p>"
+          },
+          {
+            "group": "Succès",
+            "type": "Object",
+            "optional": false,
+            "field": "Users",
+            "description": "<p>Informations de l'utilisateur</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Succès - Réponse :",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Users\" : {\n      \"idUser\": 1,\n      \"email\": \"j.dujardin@gmail.com\",\n      \"pseudo\": \"JeanJean\",\n      \"lastName\": \"Dujardin\",\n      \"firstName\": \"Jean\",\n      \"role\": 4,\n      \"profilePicture\": \"http://...\",\n      \"registration\": \"2015-12-05T06:24:33.000Z\"\n  }\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "error": {
+      "fields": {
+        "Erreur": [
+          {
+            "group": "Erreur",
+            "type": "Boolean",
+            "optional": false,
+            "field": "Error",
+            "description": "<p>Retourne &quot;true&quot; en cas d'erreur</p>"
+          },
+          {
+            "group": "Erreur",
+            "type": "Number",
+            "optional": false,
+            "field": "Code",
+            "description": "<p>Code d'erreur (102 = Erreur lors de la requête, 105 = L'utilisateur n'a pas les droits)</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Erreur - Réponse :",
+          "content": "{\n  \"Error\" : true,\n  \"Code\" : 102\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "filename": "./routes/users/users.js",
+    "groupTitle": "Gestion_Utilisateurs"
+  },
+  {
+    "type": "put",
+    "url": "/users/:idUser",
     "title": "Modifier un utilisateur",
     "version": "1.0.0",
     "name": "Modification_des_informations_d_un_utilisateur",
@@ -2850,7 +3693,7 @@ define({ "api": [
             "group": "Parameter",
             "type": "Number",
             "optional": false,
-            "field": "idUsers",
+            "field": "idUser",
             "description": "<p>ID de l'utilisateur souhaité</p>"
           }
         ]
@@ -2885,7 +3728,7 @@ define({ "api": [
       "examples": [
         {
           "title": "Succès - Réponse :",
-          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Users\" : {\n      \"idUsers\": 1,\n      \"email\": \"j.dujardin@gmail.com\",\n      \"password\": \"a94a8fe5ccb19ba61c4c0873d391e9879ffa353a\",\n      \"lastname\": \"Dujardin\",\n      \"firstname\": \"Jean\",\n      \"role\": 4,\n      \"registration\": \"2015-12-05T06:24:33.000Z\"\n  }\n}",
+          "content": "{\n  \"Error\": false,\n  \"Code\" : 1,\n  \"Users\" : {\n      \"idUser\": 1,\n      \"email\": \"j.dujardin@gmail.com\",\n      \"pseudo\": \"JeanJean\",\n      \"lastName\": \"Dujardin\",\n      \"firstName\": \"Jean\",\n      \"role\": 4,\n      \"registration\": \"2015-12-05T06:24:33.000Z\"\n  }\n}",
           "type": "json"
         }
       ]
@@ -2905,7 +3748,7 @@ define({ "api": [
             "type": "Number",
             "optional": false,
             "field": "Code",
-            "description": "<p>Code d'erreur (102 = Erreur lors de la requête)</p>"
+            "description": "<p>Code d'erreur (102 = Erreur lors de la requête, 105 = L'utilisateur n'a pas les droits)</p>"
           }
         ]
       },
@@ -2917,12 +3760,12 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./_apidoc.js",
     "groupTitle": "Gestion_Utilisateurs"
   },
   {
     "type": "delete",
-    "url": "/users/:idUsers",
+    "url": "/users/:idUser",
     "title": "Supprimer un utilisateur",
     "version": "1.0.0",
     "name": "Suppression_d_un_utilisateur",
@@ -2935,7 +3778,7 @@ define({ "api": [
             "group": "Parameter",
             "type": "Number",
             "optional": false,
-            "field": "idUsers",
+            "field": "idUser",
             "description": "<p>ID de l'utilisateur souhaité</p>"
           }
         ]
@@ -2983,7 +3826,7 @@ define({ "api": [
             "type": "Number",
             "optional": false,
             "field": "Code",
-            "description": "<p>Code d'erreur (102 = Erreur lors de la requête, 103 = L'utilisateur n'existe pas)</p>"
+            "description": "<p>Code d'erreur (102 = Erreur lors de la requête, 103 = L'utilisateur n'existe pas, 105 = L'utilisateur n'a pas les droits)</p>"
           }
         ]
       },
@@ -2995,7 +3838,7 @@ define({ "api": [
         }
       ]
     },
-    "filename": "./REST.js",
+    "filename": "./routes/users/users.js",
     "groupTitle": "Gestion_Utilisateurs"
   }
 ] });

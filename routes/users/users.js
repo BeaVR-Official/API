@@ -67,7 +67,7 @@ router.get("/", expressjwt({secret: process.env.jwtSecretKey}), function(req, re
 });
 
 /**
-* @api {get} /roles/ Liste des rôles
+* @api {get} /users/roles/ Liste des rôles
 * @apiVersion 1.0.0
 * @apiName Liste des utilisateurs
 * @apiGroup Gestion Utilisateurs
@@ -281,7 +281,7 @@ router.delete("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), functi
 
 /**
  * @api {put} /users/:idUser Modifier un utilisateur
- * @apiVersion 1.0.0
+ * @apiVersion 2.0.0
  * @apiName Modification des informations d'un utilisateur
  * @apiGroup Gestion Utilisateurs
  * @apiDescription Modifier les informations d'un utilisateur donné.
@@ -291,6 +291,7 @@ router.delete("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), functi
  * @apiParam {String} name Nom de l'utilisateur
  * @apiParam {String} firstname Prénom de l'utilisateur
  * @apiParam {Number} role Rôle de l'utilisateur
+ * @apiParam {String} profilePicture URL vers la photo de profil de l'utilisateur
  * @apiParam {Number} idUser ID de l'utilisateur souhaité
  *
  * @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
@@ -308,6 +309,7 @@ router.delete("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), functi
   *           "lastName": "Dujardin",
   *           "firstName": "Jean",
   *           "role": 4,
+  *           "profilePicture": "http://...",
   *           "registration": "2015-12-05T06:24:33.000Z"
   *       }
   *     }
