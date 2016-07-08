@@ -6,6 +6,7 @@ var mysql = require("mysql");
 var express = require('express');
 var router = express.Router();
 var sha1 = require('sha1');
+var expressjwt = require('express-jwt');
 
 
 /**
@@ -205,17 +206,16 @@ router.get("/devices", function(req, res){
 });
 
 /**
-* @api {get} /applications/state/:state Liste des application pour un état donné
+* @api {get} /applications/medias Liste des medias
 * @apiVersion 1.0.0
 * @apiName Liste des applications
 * @apiGroup Gestion Applications
-* @apiDescription Retourne la liste de toutes les applications pour un état donné
-*
-* @apiParam {Number} state Etat de l'application
+* @apiDescription Retourne la liste de toutes les medias d'application.
 *
 * @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
 * @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
-* @apiSuccess (Succès) {Object[]} Devices Liste des devices
+* @apiSuccess (Succès) {Object[]} Medias Liste des médias
+>>>>>>> 4a6d4f3891c118f5bde86a3abc532cd2b1336428
 *
 * @apiSuccessExample Succès - Réponse :
 *     {
@@ -226,6 +226,11 @@ router.get("/devices", function(req, res){
 *           "idDevice": "1",
 *           "name": "LeapMotion",
 *           "image": "masuperleap.jpg"
+*       "Medias" : [
+*         {
+*           "idMedia": "1",
+*           "title": "Logo",
+*           "url": "monlogotop.jpg"
 *         },
 *         ...
 *       ]
@@ -240,6 +245,33 @@ router.get("/devices", function(req, res){
 *       "Code" : 102
 *     }
 *
+*/
+
+router.get("/medias", function(req, res){
+    var query = "SELECT * FROM ??";
+    var table = ["Medias"];
+
+    query = mysql.format(query, table);
+    req.app.locals.connection.query(query, function(err, rows){
+        if (!err)
+            res.json({"Error" : false, "Code" : 1, "Medias" : rows}); // OK
+        else
+            res.json({"Error" : true, "Code" : 102}); // Erreur
+    });
+});
+
+/*
+* @api {get} /applications/state/:state Liste des application pour un état donné
+* @apiVersion 1.0.0
+* @apiName Liste des applications
+* @apiGroup Gestion Applications
+* @apiDescription Retourne la liste de toutes les applications pour un état donné
+*
+* @apiParam {Number} state Etat de l'application
+*
+* @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
+* @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
+* @apiSuccess (Succès) {Object[]} Devices Liste des devices
 */
 router.get("/state/:state", function(req, res){
 
@@ -340,7 +372,7 @@ router.get("/:idApplication", function(req, res){
     *     }
 *
 * @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
-* @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête, 103 = L'application n'existe pas)
+* @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête, 103 = L'application n'existe pas, 105 = L'utilisateur n'a pas les droits)
 *
 * @apiErrorExample Erreur - Réponse :
 *     {
@@ -349,24 +381,28 @@ router.get("/:idApplication", function(req, res){
     *     }
 *
 */
-router.delete("/:idApplication", function(req, res){
+router.delete("/:idApplication", expressjwt({secret: process.env.jwtSecretKey}),function(req, res){
 
-    var query = "DELETE FROM ?? WHERE ??=?";
-    var table = ["Applications", "idApplication", req.params.idApplication];
+    if (req.user.role == 'Administrator') {
+        var query = "DELETE FROM ?? WHERE ??=?";
+        var table = ["Applications", "idApplication", req.params.idApplication];
 
-    query = mysql.format(query, table);
-    req.app.locals.connection.query(query, function(err, rows){
-        if (!err)
-        {
-            if (rows.affectedRows == 1)
-                res.json({"Error" : false, "Code" : 1}); // OK
-            else {
-                res.json({"Error" : true, "Code" : 103}); // N'existe pas
+        query = mysql.format(query, table);
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
+            {
+                if (rows.affectedRows == 1)
+                    res.json({"Error" : false, "Code" : 1}); // OK
+                else {
+                    res.json({"Error" : true, "Code" : 103}); // N'existe pas
+                }
             }
-        }
-        else
-            res.json({"Error" : true, "Code" : 102}); // Erreur
-    });
+            else
+                res.json({"Error" : true, "Code" : 102}); // Erreur
+        });
+    } else {
+        res.json({"Error": true, "Code" : 105}); // L'utilisateur n'a pas les droits
+    }
 });
 
 /**
@@ -580,7 +616,7 @@ router.post("/:idApplication/validateApplicationSubmission",function(req,res){
 *     }
 *
 * @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
-* @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête)
+* @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête, 105 = L'utilisateur n'a pas les droits)
 *
 * @apiErrorExample Erreur - Réponse :
 *     {
@@ -589,23 +625,69 @@ router.post("/:idApplication/validateApplicationSubmission",function(req,res){
 *     }
 *
 */
-router.put("/:idApplication",function(req,res){
-    var query = "UPDATE ?? SET ?? = ?, ?? = ?, ?? = ?, ?? = ?, ?? = ?, ?? = ? WHERE ?? = ?";
-    var table = ["applications","name",req.body.name,
-        "description",req.body.description,
-        "price",req.body.price,
-        "headdevice",req.body.headdevice,
-        "handsdevice",req.body.handsdevice,
-        "category",req.body.category,
-        "idApplication",req.params.idApplication];
-    query = mysql.format(query,table);
-    req.app.locals.connection.query(query,function(err,rows){
-        if(err) {
-            res.json({"Error" : true, "Code" : 102});
-        } else {
-            res.json({"Error" : false, "Code" : 1});
-        }
-    });
+router.put("/:idApplication", expressjwt({secret: process.env.jwtSecretKey}), function(req,res){
+    if (req.user.role == 'Administrator') {
+        var query = "UPDATE ?? SET ?? = ?, ?? = ?, ?? = ?, ?? = (SELECT idMedia FROM Medias WHERE url = ?), ?? = ?, ?? = (SELECT idState FROM States WHERE state = ?) WHERE ?? = ?";
+        var table = ["Applications", "name", req.body.name,
+            "description", req.body.description,
+            "price", req.body.price,
+            "logo", req.body.logo.name,
+            "url", req.body.url,
+            "state", req.body.state.name,
+            "idApplication", req.params.idApplication];
+        query = mysql.format(query,table);
+        req.app.locals.connection.query(query,function(err,rows){
+            if(err) {
+                res.json({"Error" : true, "Code" : 102});
+            } else {
+                var query = "DELETE FROM ?? WHERE ?? = ?";
+                var table = ["CategoriesToApplications", "fk_idApplication", req.params.idApplication];
+                query = mysql.format(query,table);
+                req.app.locals.connection.query(query,function(err,rows){
+                    if (!err) {
+                        var categories = req.body.categoriesNames;
+                        for (var i = 0; i < categories.length; i++) {
+                            var query = "INSERT INTO ?? (??, ??) VALUES (?, (SELECT idCategory FROM Categories WHERE name = ?))";
+                            var table = ["CategoriesToApplications", "fk_idApplication", "fk_idCategory", req.params.idApplication, categories[i].name];
+                            query = mysql.format(query,table);
+                            req.app.locals.connection.query(query);
+                        }
+                    }
+                });
+                var query = "DELETE FROM ?? WHERE ?? = ?";
+                var table = ["DevicesToApplications", "fk_idApplication", req.params.idApplication];
+                query = mysql.format(query,table);
+                req.app.locals.connection.query(query,function(err,rows){
+                    if (!err) {
+                        var devices = req.body.devicesNames;
+                        for (var i = 0; i < devices.length; i++) {
+                            var query = "INSERT INTO ?? (??, ??) VALUES (?, (SELECT idDevice FROM Devices WHERE name = ?))";
+                            var table = ["DevicesToApplications", "fk_idApplication", "fk_idDevice", req.params.idApplication, devices[i].name];
+                            query = mysql.format(query,table);
+                            req.app.locals.connection.query(query);
+                        }
+                    }
+                });
+                var query = "DELETE FROM ?? WHERE ?? = ?";
+                var table = ["MediasToApplications", "fk_idApplication", req.params.idApplication];
+                query = mysql.format(query,table);
+                req.app.locals.connection.query(query,function(err,rows){
+                    if (!err) {
+                        var medias = req.body.screenshots;
+                        for (var i = 0; i < medias.length; i++) {
+                            var query = "INSERT INTO ?? (??, ??) VALUES (?, (SELECT idMedia FROM Medias WHERE url = ?))";
+                            var table = ["MediasToApplications", "fk_idApplication", "fk_idMedia", req.params.idApplication, medias[i].name];
+                            query = mysql.format(query,table);
+                            req.app.locals.connection.query(query);
+                        }
+                    }
+                });
+                res.json({"Error" : false, "Code" : 1});
+            }
+        });
+    } else {
+        res.json({"Error": true, "Code" : 105}); // L'utilisateur n'a pas les droits
+    }
 });
 
 /**
