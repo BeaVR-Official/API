@@ -28,6 +28,8 @@ app.use(function (req, res, next) {
     next();
 });
 
+console.log("OK");
+
 function REST(){
     var self = this;
     self.connectMysql();
