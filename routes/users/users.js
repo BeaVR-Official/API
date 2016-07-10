@@ -154,9 +154,9 @@ router.get("/roles", function(req, res){
  */
 
 router.get("/:idUser(\\d+)/", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
-    if (req.user.role == 'Administrator') {
+    if (req.user.role == 'Administrator' || req.user.id == req.params.idUser) {
         var query = "SELECT * FROM ?? WHERE ??=?";
-        var table = ["AllUsersInfos", "idUser", req.params.idUser];
+        var table = ["AllUsersInfos", "id", req.params.idUser];
 
         query = mysql.format(query, table);
         req.app.locals.connection.query(query, function(err, rows){
