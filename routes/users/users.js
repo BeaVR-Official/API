@@ -404,8 +404,9 @@ router.put("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(
  *
  */
 router.post("/upload/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
+    console.log(__dirname + "/uploads");
     if (req.user.role == 'Administrator' || req.user.id == req.params.idUser) {
-        mkdirp(appDir + "/uploads", function (err) {
+        mkdirp(__dirname + "/uploads", function (err) {
             if (!err) {
                 upload(req,res,function(err) {
                     if(err) {
