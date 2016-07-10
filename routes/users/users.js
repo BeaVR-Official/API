@@ -409,6 +409,7 @@ router.post("/upload/:idUser", expressjwt({secret: process.env.jwtSecretKey}), f
                 res.json({"Error" : true, "Code" : 106}); // OK
             }
             res.json({"Error" : false, "Code" : 1, "profilePicture" : appDir + '\\' + req.file.path}); // OK
+            console.log(req);
         });
     } else {
         res.json({"Error": true, "Code" : 105}); // L'utilisateur n'a pas les droits
