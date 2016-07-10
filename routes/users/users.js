@@ -406,9 +406,11 @@ router.post("/upload/:idUser", expressjwt({secret: process.env.jwtSecretKey}), f
     if (req.user.role == 'Administrator' || req.user.id == req.params.idUser) {
         upload(req,res,function(err) {
             if(err) {
+                console.log(req);
+                console.log(res);
+                console.log(err);
                 res.json({"Error" : true, "Code" : 106}); // OK
             }
-            console.log(err);
             res.json({"Error" : false, "Code" : 1}); // OK
         });
     } else {
