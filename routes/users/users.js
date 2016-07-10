@@ -8,6 +8,18 @@ var router = express.Router();
 var sha1 = require('sha1');
 var jwt = require('jsonwebtoken');
 var expressjwt = require('express-jwt');
+var multer = require('multer');
+var storage =   multer.diskStorage({
+    destination: function (req, file, callback) {
+        callback(null, './uploads');
+    },
+    filename: function (req, file, callback) {
+        callback(null, file.fieldname + '-' + Date.now());
+    }
+});
+var upload = multer({ storage : storage}).single('file');
+var path = require('path');
+var appDir = path.dirname(require.main.filename);
 
 /**
  * @api {get} /users Liste des utilisateurs
@@ -359,4 +371,47 @@ router.put("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(
     }
 });
 
+
+/**
+ * @api {post} /upload/:idUser Upload de la photo de profil d'un utilisateur
+ * @apiVersion 2.0.0
+ * @apiName Modification des informations d'un utilisateur
+ * @apiGroup Gestion Utilisateurs
+ * @apiDescription Modifier les informations d'un utilisateur donné.
+ *
+ * @apiParam {Number} idUser ID de l'utilisateur souhaité
+ *
+ * @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
+ * @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
+ * @apiSuccess (Succès) {String} profilePicture Path de la photo de profil
+ *
+ * @apiSuccessExample Succès - Réponse :
+ *     {
+  *       "Error": false,
+  *       "Code" : 1,
+  *       "profilePicture": "http://..."
+  *     }
+ *
+ * @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
+ * @apiError (Erreur) {Number} Code Code d'erreur (105 = L'utilisateur n'a pas les droits, 106 = Erreur d'upload)
+ *
+ * @apiErrorExample Erreur - Réponse :
+ *     {
+  *       "Error" : true,
+  *       "Code" : 102
+  *     }
+ *
+ */
+router.post("/upload/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
+    if (req.user.role == 'Administrator' || req.user.id == req.params.idUser) {
+        upload(req,res,function(err) {
+            if(err) {
+                res.json({"Error" : true, "Code" : 106}); // OK
+            }
+            res.json({"Error" : false, "Code" : 1, "profilePicture" : appDir + '\\' + req.file.path}); // OK
+        });
+    } else {
+        res.json({"Error": true, "Code" : 105}); // L'utilisateur n'a pas les droits
+    }
+});
 module.exports = router;
