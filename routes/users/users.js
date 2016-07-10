@@ -410,6 +410,7 @@ router.post("/upload/:idUser", expressjwt({secret: process.env.jwtSecretKey}), f
             if (!err) {
                 upload(req,res,function(err) {
                     if(err) {
+                        console.log(err);
                         res.json({"Error" : true, "Code" : 106}); // Erreur d'upload
                     } else {
                         res.json({"Error" : false, "Code" : 1, "profilePicture" : appDir + '\\' + req.file.path}); // OK
