@@ -9,6 +9,7 @@ var sha1 = require('sha1');
 var jwt = require('jsonwebtoken');
 var expressjwt = require('express-jwt');
 var multer = require('multer');
+var mkdirp = require('mkdirp');
 var storage =   multer.diskStorage({
     destination: function (req, file, callback) {
         callback(null, './uploads');
@@ -404,12 +405,18 @@ router.put("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(
  */
 router.post("/upload/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
     if (req.user.role == 'Administrator' || req.user.id == req.params.idUser) {
-        upload(req,res,function(err) {
-            if(err) {
+        mkdirp(appDir + "/uploads", function (err) {
+            if (!err) {
+                upload(req,res,function(err) {
+                    if(err) {
+                        res.json({"Error" : true, "Code" : 106}); // Erreur d'upload
+                    } else {
+                        res.json({"Error" : false, "Code" : 1, "profilePicture" : appDir + '\\' + req.file.path}); // OK
+                    }
+                });
+            } else {
                 console.log(err);
-                res.json({"Error" : true, "Code" : 106}); // OK
             }
-            res.json({"Error" : false, "Code" : 1}); // OK
         });
     } else {
         res.json({"Error": true, "Code" : 105}); // L'utilisateur n'a pas les droits
