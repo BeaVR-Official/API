@@ -8,11 +8,8 @@ var router = express.Router();
 var sha1 = require('sha1');
 var jwt = require('jsonwebtoken');
 var expressjwt = require('express-jwt');
-<<<<<<< HEAD
 var io = require('socket.io-client');
 var shortid = require('shortid');
-
-=======
 var multer = require('multer');
 var storage =   multer.diskStorage({
     destination: function (req, file, callback) {
@@ -26,7 +23,6 @@ var fs = require('fs');
 var upload = multer({ storage : storage}).single('file');
 var path = require('path');
 var appDir = path.dirname(require.main.filename);
->>>>>>> ec1d4c5433249db2ce6b92a9b955f647c92cb884
 
 /**
  * @api {get} /users Liste des utilisateurs
@@ -426,7 +422,6 @@ router.put("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(
 });
 
 
-<<<<<<< HEAD
 //// exemple de requête à envoyer POST /users/file avec en body filename : "toto.png" et buffer: (image encodée en base64)
 //// réponse response.data.path = path d'accès à l'image sur le serveur
 
@@ -452,7 +447,6 @@ router.post('/file', function(req, res) {
     });
 });
 
-=======
 /**
  * @api {post} /upload/:idUser Upload de la photo de profil d'un utilisateur
  * @apiVersion 2.0.0
