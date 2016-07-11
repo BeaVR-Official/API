@@ -495,5 +495,4 @@ router.post("/upload/:idUser", expressjwt({secret: process.env.jwtSecretKey}), f
         res.json({"Error": true, "Code" : 105}); // L'utilisateur n'a pas les droits
     }
 });
->>>>>>> ec1d4c5433249db2ce6b92a9b955f647c92cb884
 module.exports = router;
