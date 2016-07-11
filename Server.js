@@ -10,7 +10,7 @@ process.env.mailPort = 465;
 process.env.mailUser = 'contact@beavr.fr';
 process.env.jwtSecretKey = 'XSVgtQ\;>1!\,z`\,xDA*zMzs|#\$Iku-`P(l9p.u/1IO][#wKs\cXS\ElxM~P{pw4J';
 process.env.NODE_ENV = "debug";
-
+process.env.dataServer = "http://5.196.88.52:5001/";
 
 var config = require('config');
 var app  = express();
@@ -61,12 +61,7 @@ app.use('/api/devices', devices);
 app.use('/api/categories', categories);
 app.use('/api/comments', comments);
 
-app.use(function(err, req, res, next) {
-    res.status(parseInt((err.status != undefined) ? err.status: 500)).json({
-        message: err.message,
-        error: err
-    });
-});
+
 
 function setPathError () {
     app.get('*', function(req, res, next) {
@@ -99,6 +94,13 @@ function setPathError () {
 }
 
 setPathError();
+
+app.use(function(err, req, res, next) {
+    res.status(parseInt((err.status != undefined) ? err.status: 500)).json({
+        message: err.message,
+        error: err
+    });
+});
 
 app.listen(process.env.PORT || 3000,function(){
     var value = (process.env.PORT == undefined) ? 3000 : process.env.PORT;

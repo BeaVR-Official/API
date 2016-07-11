@@ -7,7 +7,8 @@ var router = express.Router();
 var jwt = require('jsonwebtoken');
 var expressjwt = require('express-jwt');
 var CryptoJS = require('crypto-js');
-
+var io = require('socket.io-client');
+var shortid = require('shortid');
 
 /**
  * @api {get} /users Liste des utilisateurs
@@ -483,9 +484,25 @@ router.put("/:idUser",
                                 if (user.admin == true)
                                     userSearch[key] = req.body[key];
                             }
-                            else
-                            if (key != "_id")
-                                userSearch[key] = req.body[key];
+                            else if (key == "userImg") {
+                                var socket = io.connect(process.env.dataServer, {reconnect: true});
+                                console.log(req.body);
+                                var filename = shortid.generate() + "." + req.body.userImg.filename.split('.').pop();
+                                console.log(filename);
+                                socket.on( 'connect', function() {
+                                    socket.emit('downloadImage', { image: true, name: filename, buffer: req.body.userImg.buffer });
+                                    return socket.on('downloadSucceed', function(data) {
+                                        userSearch.picture = data.path;
+                                        socket.disconnect();
+                                        return;
+                                    });
+                                });
+                            }
+                            else {
+                                if (key != "_id")
+                                    userSearch[key] = req.body[key];
+                            }
+
                         }
                     }
                     userSearch.save(function(err) {
@@ -796,6 +813,7 @@ router.get('/:idUser/progressions',
         }
     }
 );
+
 
 
 module.exports = router;
