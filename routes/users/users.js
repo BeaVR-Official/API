@@ -338,7 +338,54 @@ router.delete("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), functi
  *
  */
 router.put("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
-    if (req.user.role == 'Administrator') {
+    if (req.user.id == req.params.idUser) {
+        var query = "SELECT * FROM ?? WHERE ??=?";
+        var table = ["Users", "idUser", req.params.idUser];
+
+        query = mysql.format(query, table);
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
+            {
+                if (rows == 0)
+                    res.json({"Error" : true, "Code" : 103}); // L'utilisateur n'existe pas
+                else
+                {
+                    if (!req.body.password) {
+                        var query = "UPDATE Users SET `email`= ?,`lastName`= ?,`firstName`= ?, `profilePicture` = (SELECT idMedia FROM Medias WHERE url = ?) WHERE `idUser` = ?";
+                        var table = [req.body.email, req.body.lastName, req.body.firstName, req.body.profilePicture, req.params.idUser];
+                    } else {
+                        var query = "UPDATE Users SET `email`= ?,`lastName`= ?,`firstName`= ?,`password`= ?, `profilePicture` = (SELECT idMedia FROM Medias WHERE url = ?) WHERE `idUser` = ?";
+                        var table = [req.body.email, req.body.lastName, req.body.firstName, sha1(req.body.password), req.body.profilePicture, req.params.idUser];
+                    }
+                    query = mysql.format(query, table);
+                    req.app.locals.connection.query(query, function(err, rows){
+                        if (!err)
+                        {
+                            var query = "SELECT * FROM ?? WHERE ??=?";
+                            var table = ["AllUsersInfos", "id", req.params.idUser];
+
+                            query = mysql.format(query, table);
+                            req.app.locals.connection.query(query, function(err, rows){
+                                if (!err)
+                                {
+                                    if (rows.length == 0)
+                                        res.json({"Error" : true, "Code" : 103}); // L'utilise n'existe pas
+                                    else
+                                        res.json({"Error" : false, "Code" : 1, "Users" : rows[0]}); // OK
+                                }
+                                else
+                                    res.json({"Error" : true, "Code" : 102}); // Erreur
+                            });
+                        }
+                        else
+                            res.json({"Error" : true, "Code" : 102}); // Erreur
+                    });
+                }
+            }
+            else
+                res.json({"Error" : true, "Code" : 102}); // Erreur
+        });
+    } else if (req.user.role == 'Administrator') {
         var query = "SELECT * FROM ?? WHERE ??=?";
         var table = ["Users", "idUser", req.params.idUser];
 
