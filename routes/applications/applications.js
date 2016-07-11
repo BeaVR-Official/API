@@ -62,7 +62,7 @@ router.get("/", function(req, res){
 });
 
 /**
-* @api {get} /states/ Liste des états
+* @api {get} /applications/states/ Liste des états
 * @apiVersion 1.0.0
 * @apiName Liste des applications
 * @apiGroup Gestion Applications
@@ -109,7 +109,7 @@ router.get("/states", function(req, res){
 });
 
 /**
-* @api {get} /categories/ Liste des catégories
+* @api {get} /applications/categories/ Liste des catégories
 * @apiVersion 1.0.0
 * @apiName Liste des applications
 * @apiGroup Gestion Applications
@@ -158,7 +158,7 @@ router.get("/categories", function(req, res){
 });
 
 /**
-* @api {get} /devices/ Liste des devices
+* @api {get} /applications/devices/ Liste des devices
 * @apiVersion 1.0.0
 * @apiName Liste des applications
 * @apiGroup Gestion Applications
@@ -206,7 +206,7 @@ router.get("/devices", function(req, res){
 });
 
 /**
-* @api {get} /devices/ Liste des medias
+* @api {get} /applications/medias Liste des medias
 * @apiVersion 1.0.0
 * @apiName Liste des applications
 * @apiGroup Gestion Applications
@@ -215,11 +215,17 @@ router.get("/devices", function(req, res){
 * @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
 * @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
 * @apiSuccess (Succès) {Object[]} Medias Liste des médias
+>>>>>>> 4a6d4f3891c118f5bde86a3abc532cd2b1336428
 *
 * @apiSuccessExample Succès - Réponse :
 *     {
 *       "Error": false,
 *       "Code" : 1,
+*       "States" : [
+*         {
+*           "idDevice": "1",
+*           "name": "LeapMotion",
+*           "image": "masuperleap.jpg"
 *       "Medias" : [
 *         {
 *           "idMedia": "1",
@@ -240,6 +246,7 @@ router.get("/devices", function(req, res){
 *     }
 *
 */
+
 router.get("/medias", function(req, res){
     var query = "SELECT * FROM ??";
     var table = ["Medias"];
@@ -253,6 +260,19 @@ router.get("/medias", function(req, res){
     });
 });
 
+/*
+* @api {get} /applications/state/:state Liste des application pour un état donné
+* @apiVersion 1.0.0
+* @apiName Liste des applications
+* @apiGroup Gestion Applications
+* @apiDescription Retourne la liste de toutes les applications pour un état donné
+*
+* @apiParam {Number} state Etat de l'application
+*
+* @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
+* @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
+* @apiSuccess (Succès) {Object[]} Devices Liste des devices
+*/
 router.get("/state/:state", function(req, res){
 
     var query = "SELECT * FROM `AllApplicationsInfos` WHERE ??=?";
@@ -438,7 +458,7 @@ router.post("/", function(req,res){
 });
 
 /**
-* @api {get} /progressions/:idApplication Récupérer la progression
+* @api {get} /applications/:idApplication/progressions Récupérer la progression
 * @apiVersion 1.0.0
 * @apiName Récupérer la progression
 * @apiGroup Gestion Applications
@@ -489,7 +509,7 @@ router.get("/:idApplication/progressions", function(req, res){
 });
 
 /**
-* @api {put} /progressions/:idApplication Mettre à jour la progression d'une application
+* @api {put} /applications/:idApplication/progressions Mettre à jour la progression d'une application
 * @apiVersion 1.0.0
 * @apiName Mettre à jour la progression
 * @apiGroup Gestion Applications
@@ -533,7 +553,7 @@ router.put("/:idApplication/progressions", function(req, res){
 });
 
 /**
-* @api {put} /validateApplicationSubmission/:idApp Valide une application soumise par un développeur
+* @api {put} /applications/:idApplication/validateApplicationSubmission Valide une application soumise par un développeur
 * @apiVersion 1.0.0
 * @apiName Valide une application soumise par un développeur
 * @apiGroup Gestion Applications
@@ -572,7 +592,7 @@ router.post("/:idApplication/validateApplicationSubmission",function(req,res){
 });
 
 /**
-* @api {put} /updateApplicationInfos Modifier les informations d'une application
+* @api {put} /applications/:idApplication Modifier les informations d'une application
 * @apiVersion 1.0.0
 * @apiName Modifier les informations d'une application
 * @apiGroup Gestion Applications
@@ -671,7 +691,7 @@ router.put("/:idApplication", expressjwt({secret: process.env.jwtSecretKey}), fu
 });
 
 /**
-* @api {post} /submitApplication Soumettre une application
+* @api {post} /applications/ Soumettre une application
 * @apiVersion 1.0.0
 * @apiName Soumettre une application
 * @apiGroup Gestion Applications

@@ -8,9 +8,25 @@ var router = express.Router();
 var sha1 = require('sha1');
 var jwt = require('jsonwebtoken');
 var expressjwt = require('express-jwt');
+<<<<<<< HEAD
 var io = require('socket.io-client');
 var shortid = require('shortid');
 
+=======
+var multer = require('multer');
+var storage =   multer.diskStorage({
+    destination: function (req, file, callback) {
+        callback(null, './uploads');
+    },
+    filename: function (req, file, callback) {
+        callback(null, file.fieldname + '-' + Date.now());
+    }
+});
+var fs = require('fs');
+var upload = multer({ storage : storage}).single('file');
+var path = require('path');
+var appDir = path.dirname(require.main.filename);
+>>>>>>> ec1d4c5433249db2ce6b92a9b955f647c92cb884
 
 /**
  * @api {get} /users Liste des utilisateurs
@@ -70,7 +86,7 @@ router.get("/", expressjwt({secret: process.env.jwtSecretKey}), function(req, re
 });
 
 /**
-* @api {get} /roles/ Liste des rôles
+* @api {get} /users/roles/ Liste des rôles
 * @apiVersion 1.0.0
 * @apiName Liste des utilisateurs
 * @apiGroup Gestion Utilisateurs
@@ -157,9 +173,9 @@ router.get("/roles", function(req, res){
  */
 
 router.get("/:idUser(\\d+)/", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
-    if (req.user.role == 'Administrator') {
+    if (req.user.role == 'Administrator' || req.user.id == req.params.idUser) {
         var query = "SELECT * FROM ?? WHERE ??=?";
-        var table = ["AllUsersInfos", "idUser", req.params.idUser];
+        var table = ["AllUsersInfos", "id", req.params.idUser];
 
         query = mysql.format(query, table);
         req.app.locals.connection.query(query, function(err, rows){
@@ -284,7 +300,7 @@ router.delete("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), functi
 
 /**
  * @api {put} /users/:idUser Modifier un utilisateur
- * @apiVersion 1.0.0
+ * @apiVersion 2.0.0
  * @apiName Modification des informations d'un utilisateur
  * @apiGroup Gestion Utilisateurs
  * @apiDescription Modifier les informations d'un utilisateur donné.
@@ -294,6 +310,7 @@ router.delete("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), functi
  * @apiParam {String} name Nom de l'utilisateur
  * @apiParam {String} firstname Prénom de l'utilisateur
  * @apiParam {Number} role Rôle de l'utilisateur
+ * @apiParam {String} profilePicture URL vers la photo de profil de l'utilisateur
  * @apiParam {Number} idUser ID de l'utilisateur souhaité
  *
  * @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
@@ -311,6 +328,7 @@ router.delete("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), functi
   *           "lastName": "Dujardin",
   *           "firstName": "Jean",
   *           "role": 4,
+  *           "profilePicture": "http://...",
   *           "registration": "2015-12-05T06:24:33.000Z"
   *       }
   *     }
@@ -326,7 +344,54 @@ router.delete("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), functi
  *
  */
 router.put("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
-    if (req.user.role == 'Administrator') {
+    if (req.user.id == req.params.idUser) {
+        var query = "SELECT * FROM ?? WHERE ??=?";
+        var table = ["Users", "idUser", req.params.idUser];
+
+        query = mysql.format(query, table);
+        req.app.locals.connection.query(query, function(err, rows){
+            if (!err)
+            {
+                if (rows == 0)
+                    res.json({"Error" : true, "Code" : 103}); // L'utilisateur n'existe pas
+                else
+                {
+                    if (!req.body.password) {
+                        var query = "UPDATE Users SET `email`= ?,`lastName`= ?,`firstName`= ?, `profilePicture` = (SELECT idMedia FROM Medias WHERE url = ?) WHERE `idUser` = ?";
+                        var table = [req.body.email, req.body.lastName, req.body.firstName, req.body.profilePicture, req.params.idUser];
+                    } else {
+                        var query = "UPDATE Users SET `email`= ?,`lastName`= ?,`firstName`= ?,`password`= ?, `profilePicture` = (SELECT idMedia FROM Medias WHERE url = ?) WHERE `idUser` = ?";
+                        var table = [req.body.email, req.body.lastName, req.body.firstName, sha1(req.body.password), req.body.profilePicture, req.params.idUser];
+                    }
+                    query = mysql.format(query, table);
+                    req.app.locals.connection.query(query, function(err, rows){
+                        if (!err)
+                        {
+                            var query = "SELECT * FROM ?? WHERE ??=?";
+                            var table = ["AllUsersInfos", "id", req.params.idUser];
+
+                            query = mysql.format(query, table);
+                            req.app.locals.connection.query(query, function(err, rows){
+                                if (!err)
+                                {
+                                    if (rows.length == 0)
+                                        res.json({"Error" : true, "Code" : 103}); // L'utilise n'existe pas
+                                    else
+                                        res.json({"Error" : false, "Code" : 1, "Users" : rows[0]}); // OK
+                                }
+                                else
+                                    res.json({"Error" : true, "Code" : 102}); // Erreur
+                            });
+                        }
+                        else
+                            res.json({"Error" : true, "Code" : 102}); // Erreur
+                    });
+                }
+            }
+            else
+                res.json({"Error" : true, "Code" : 102}); // Erreur
+        });
+    } else if (req.user.role == 'Administrator') {
         var query = "SELECT * FROM ?? WHERE ??=?";
         var table = ["Users", "idUser", req.params.idUser];
 
@@ -361,6 +426,7 @@ router.put("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(
 });
 
 
+<<<<<<< HEAD
 //// exemple de requête à envoyer POST /users/file avec en body filename : "toto.png" et buffer: (image encodée en base64)
 //// réponse response.data.path = path d'accès à l'image sur le serveur
 
@@ -386,4 +452,54 @@ router.post('/file', function(req, res) {
     });
 });
 
+=======
+/**
+ * @api {post} /upload/:idUser Upload de la photo de profil d'un utilisateur
+ * @apiVersion 2.0.0
+ * @apiName Modification des informations d'un utilisateur
+ * @apiGroup Gestion Utilisateurs
+ * @apiDescription Modifier les informations d'un utilisateur donné.
+ *
+ * @apiParam {Number} idUser ID de l'utilisateur souhaité
+ *
+ * @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
+ * @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
+ * @apiSuccess (Succès) {String} profilePicture Path de la photo de profil
+ *
+ * @apiSuccessExample Succès - Réponse :
+ *     {
+  *       "Error": false,
+  *       "Code" : 1,
+  *       "profilePicture": "http://..."
+  *     }
+ *
+ * @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
+ * @apiError (Erreur) {Number} Code Code d'erreur (105 = L'utilisateur n'a pas les droits, 106 = Erreur d'upload)
+ *
+ * @apiErrorExample Erreur - Réponse :
+ *     {
+  *       "Error" : true,
+  *       "Code" : 102
+  *     }
+ *
+ */
+router.post("/upload/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
+    console.log(__dirname);
+    if (req.user.role == 'Administrator' || req.user.id == req.params.idUser) {
+        if (!fs.existsSync(appDir + "/uploads")) {
+            fs.mkdirSync(appDir + "/uploads");
+            console.log("uploads folder created in " + appDir);
+        }
+        upload(req,res,function(err) {
+            if(err) {
+                res.json({"Error" : true, "Code" : 106}); // Erreur d'upload
+            } else {
+                res.json({"Error" : false, "Code" : 1, "profilePicture" : appDir + '\\' + req.file.path}); // OK
+            }
+        });
+    } else {
+        res.json({"Error": true, "Code" : 105}); // L'utilisateur n'a pas les droits
+    }
+});
+>>>>>>> ec1d4c5433249db2ce6b92a9b955f647c92cb884
 module.exports = router;

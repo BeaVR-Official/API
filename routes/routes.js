@@ -107,7 +107,7 @@ router.post("/registration", function(req,res){
 
 /**
  * @api {post} /connection Connexion
- * @apiVersion 1.0.0
+ * @apiVersion 2.0.0
  * @apiName Connexion
  * @apiGroup Autres
  * @apiDescription Permet la connexion d'un utilisateur.
@@ -123,16 +123,7 @@ router.post("/registration", function(req,res){
  *     {
   *       "Error": false,
   *       "Code" : 1,
-  *       "Data" : {
-  *         "idUser": 1,
-  *         "email": "j.dujardin@gmail.com",
-  *         "password": "a94a8fe5ccb19ba61c4c0873d391e9879ffa353a",
-  *         "pseudo" : "JeanJean",
-  *         "lastName": "Dujardin",
-  *         "firstName": "Jean",
-  *         "role": 4,
-  *         "registration": "2015-12-05T06:24:33.000Z"
-  *       }
+  *       "Token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVC"
   *     }
  *
  * @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
@@ -440,7 +431,7 @@ router.get("/getFeedbacks",function(req,res){
   *           "nbComments": 42,
   *           "nbApplications": 42,
   *           "nbPurchases": 42,
-  *           "nbFeedbacks": 42,
+  *           "nbFeedbacks": 42
   *         }
   *     }
  *
