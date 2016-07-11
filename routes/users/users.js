@@ -373,6 +373,7 @@ router.post('/file', function(req, res) {
         socket.emit('downloadImage', { image: true, name: filename, buffer: req.body.buffer });
         return socket.on('downloadSucceed', function(data) {
            console.log(data);
+            //// ici ajouter le path du fichier dans la base de données
             res.status(200).json({
                 status      : 200,
                 message     : "OK",
