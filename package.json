@@ -16,7 +16,9 @@
     "mysql": "~2.5.5",
     "nodemailer": "^2.4.2",
     "randomstring": "^1.1.5",
-    "sha1": "~1.1.1 "
+    "sha1": "~1.1.1 ",
+    "shortid": "~2.2.6",
+    "socket.io-client" : "~1.4.8"
   },
   "devDependencies": {
     "mocha": "^2.5.3",

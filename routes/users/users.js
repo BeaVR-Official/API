@@ -8,6 +8,9 @@ var router = express.Router();
 var sha1 = require('sha1');
 var jwt = require('jsonwebtoken');
 var expressjwt = require('express-jwt');
+var io = require('socket.io-client');
+var shortid = require('shortid');
+
 
 /**
  * @api {get} /users Liste des utilisateurs
@@ -355,6 +358,31 @@ router.put("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(
     } else {
         res.json({"Error": true, "Code" : 105}); // L'utilisateur n'a pas les droits
     }
+});
+
+
+//// exemple de requête à envoyer POST /users/file avec en body filename : "toto.png" et buffer: (image encodée en base64)
+//// réponse response.data.path = path d'accès à l'image sur le serveur
+
+router.post('/file', function(req, res) {
+    var socket = io.connect('http://localhost:5001/', {reconnect: true});
+    console.log(req.body);
+    var filename = shortid.generate() + "." + req.body.filename.split('.').pop();
+    console.log(filename);
+    socket.on( 'connect', function() {
+        socket.emit('downloadImage', { image: true, name: filename, buffer: req.body.buffer });
+        return socket.on('downloadSucceed', function(data) {
+           console.log(data);
+            res.status(200).json({
+                status      : 200,
+                message     : "OK",
+                data        : {
+                    path    :   data.path
+                }
+            });
+            return;
+        });
+    });
 });
 
 module.exports = router;
