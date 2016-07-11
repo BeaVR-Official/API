@@ -9,7 +9,6 @@ var sha1 = require('sha1');
 var jwt = require('jsonwebtoken');
 var expressjwt = require('express-jwt');
 var multer = require('multer');
-var mkdirp = require('mkdirp');
 var storage =   multer.diskStorage({
     destination: function (req, file, callback) {
         callback(null, './uploads');
@@ -18,6 +17,7 @@ var storage =   multer.diskStorage({
         callback(null, file.fieldname + '-' + Date.now());
     }
 });
+var fs = require('fs');
 var upload = multer({ storage : storage}).single('file');
 var path = require('path');
 var appDir = path.dirname(require.main.filename);
@@ -404,20 +404,17 @@ router.put("/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(
  *
  */
 router.post("/upload/:idUser", expressjwt({secret: process.env.jwtSecretKey}), function(req, res){
-    console.log(__dirname + "/uploads");
+    console.log(__dirname);
     if (req.user.role == 'Administrator' || req.user.id == req.params.idUser) {
-        mkdirp(__dirname + "/uploads", function (err) {
-            if (!err) {
-                upload(req,res,function(err) {
-                    if(err) {
-                        console.log(err);
-                        res.json({"Error" : true, "Code" : 106}); // Erreur d'upload
-                    } else {
-                        res.json({"Error" : false, "Code" : 1, "profilePicture" : appDir + '\\' + req.file.path}); // OK
-                    }
-                });
+        if (!fs.existsSync(appDir + "/uploads")) {
+            fs.mkdirSync(appDir + "/uploads");
+            console.log("uploads folder created in " + appDir);
+        }
+        upload(req,res,function(err) {
+            if(err) {
+                res.json({"Error" : true, "Code" : 106}); // Erreur d'upload
             } else {
-                console.log(err);
+                res.json({"Error" : false, "Code" : 1, "profilePicture" : appDir + '\\' + req.file.path}); // OK
             }
         });
     } else {
