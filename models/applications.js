@@ -13,7 +13,7 @@ var applicationsSchema = new Schema({
     url             : String,
     categoriesName  : [{ type: ObjectId, ref: 'categories'}],
     devicesNames    : [{ type: ObjectId, ref : 'devices'}],
-    price           : { type: Number, required: true},
+    price           : { type: Number, required: true, min: 0, max: 99, default: 0},
     author          : {type: ObjectId, ref: 'users', required: true},
     created_at      : Date,
     updated_at      : Date

@@ -37,6 +37,16 @@ require("./config/passport")(passport);
 require('./routes/auth/google')(app, passport);
 require("./routes/auth/facebook")(app, passport);
 
+var paypal = require('paypal-rest-sdk');
+paypal.configure({
+    'mode': 'sandbox', //sandbox or live
+    'host': 'api.sandbox.paypal.com',
+    'port': '',
+    'client_id': 'AUyU841kaL-ok-Qa_LbkNQWrUofpnKV-ZAZVOOiGzW6g6wWvn18M9SCSR3vlJFhkKPt65YJG7Je84W-l',
+    'client_secret': 'EKWXTP9WKcY893e2PmfksMBZoL_CGbQK2UuFWcSlz9WdPL6nNaU4gByzkEiWUiIaWtCnuy4Rcy2iUNHu'
+});
+
+app.set('paypal', paypal);
 
 app.use(bodyParser.urlencoded({ extended: true }));
 

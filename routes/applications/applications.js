@@ -1132,20 +1132,20 @@ router.put("/:idApp/comments/:idComment",
                 if (err) return next(err);
                 else if (comment == null || comment == undefined) return next(req.app.getError(404, "Not found: comment not accessible or not found"), null);
                 else {
-                   if (comment.author == req.user.id || req.user.admin == true) {
+                    if (comment.author == req.user.id || req.user.admin == true) {
                         for (var key in req.body) {
                             if (comment[key] != undefined)
                                 comment[key] = req.body[key];
                         }
-                       comment.save(function(err) {
-                           if (err) return next(err);
-                           else res.status(200).json({
-                               status       : 200,
-                               message      : "Comment successfully modified",
-                               data         : {}
-                           });
-                       });
-                   }
+                        comment.save(function(err) {
+                            if (err) return next(err);
+                            else res.status(200).json({
+                                status       : 200,
+                                message      : "Comment successfully modified",
+                                data         : {}
+                            });
+                        });
+                    }
                 }
             });
         }
@@ -1169,5 +1169,125 @@ router.put("/:idApp/comments/:idComment",
          }*/
     }
 );
+
+router.get('/:idApplication/payment',
+    expressjwt({secret: process.env.jwtSecretKey}),
+    function(req, res, next) {
+        if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
+        try {
+            req.app.get('mongoose').model('users').findOne({id: req.user.id}, function (err, user) {
+                if (err) return next(err);
+                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
+                else {
+                    req.user.admin = user.admin;
+                    next();
+                }
+            });
+        } catch (error) {
+            return next(error);
+        }
+    },
+    function(req, res, next) {
+        try {
+            req.app.get('mongoose').model('applications').findOne({id: req.params.idApplication}, function (err, app) {
+                if (err) return next(err);
+                else if (app == null || app == undefined) return next(req.app.getError(404, "Not found : invalid application id", null));
+                else {
+                    if (app.price == 0) {
+                        return res.status(200).json({
+                            status      : 200,
+                            message     : "Application added",
+                            data        : {}
+                        })
+                    }
+                    else {
+                        return createPayment(req, res, app, next);
+                    }
+                }
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
+);
+
+router.get('/:idApplication/payment/ExecutePayment', function(req, res, next) {
+    if (req.query.success == true) {
+        var paymentId = req.session.paymentId;
+        var payerId = req.param('PayerID');
+
+        var details = { "payer_id": payerId };
+        paypal.payment.execute(paymentId, details, function (error, payment) {
+            if (error) {
+                console.log(error);
+            } else {
+                res.send("Hell yeah!");
+            }
+        });
+    }
+    else {
+        console.log("failed");
+    }
+});
+
+function createPayment(req, res, app, next) {
+
+    var method = req.param('method');
+
+    var payment = {
+        "intent": "sale",
+        "payer": {
+        },
+        "redirect_urls": {
+            "return_url": "http://www.176.150.15.55.xip.io/api/applications/" + req.params.idApplication + "payment/ExecutePayment?success=true",
+            "cancel_url":  "http://www.176.150.15.55.xip.io/api/applications/" + req.params.idApplication + "payment/ExecutePayment?success=true"
+        },
+        "transactions": [{
+            "amount": {
+                "currency": "USD",
+                "total": app.price
+            },
+            "description": "Buy application from BeaVR Store"
+        }]
+    };
+
+
+    if (method === 'paypal') {
+        payment.payer.payment_method = 'paypal';
+    } else if (method === 'credit_card') {
+        var funding_instruments = [
+            {
+                "credit_card": {
+                    "type": req.param('type').toLowerCase(),
+                    "number": req.param('number'),
+                    "expire_month": req.param('expire_month'),
+                    "expire_year": req.param('expire_year'),
+                    "first_name": req.param('first_name'),
+                    "last_name": req.param('last_name')
+                }
+            }
+        ];
+        payment.payer.payment_method = 'credit_card';
+        payment.payer.funding_instruments = funding_instruments;
+    }
+
+    req.app.get('paypal').payment.create(payment, function (error, payment) {
+        if (error) {
+            return next(error);
+        } else {
+            if(payment.payer.payment_method === 'paypal') {
+                req.session.paymentId = payment.id;
+                var redirectUrl;
+                for (var i = 0; i < payment.links.length; i++) {
+                    var link = payment.links[i];
+                    if (link.method === 'REDIRECT') {
+                        redirectUrl = link.href;
+                    }
+                }
+                res.redirect(redirectUrl);
+            }
+        }
+    });
+}
 
 module.exports = router;
