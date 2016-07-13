@@ -25,6 +25,21 @@ var userSchema = new Schema({
         picture     : String,
         created_at  : String
     },
+    google          : {
+        id          : String,
+        token       : String,
+        name        : String,
+        email       : String
+    },
+    facebook        : {
+        id          : String,
+        token       : String,
+        lastname    : String,
+        firstname   : String,
+        email       : String,
+        gender      : String,
+        facebookurl : String
+    },
     created_at      : Date,
     updated_at      : Date
 });
@@ -39,16 +54,16 @@ userSchema.pre('save', true, function(next, done) {
     this.public.picture = this.picture;
     this.public.created_at = this.created_at;
     var self = this;
-    mongoose.models["users"].findOne({username : self.username},function(err, results) {
-         if(results._id.id != self._id.id) { //there was a result found, so the email address exists
-            self.invalidate("username","username must be unique");
+    mongoose.models["users"].findOne({pseudo : self.pseudo},function(err, results) {
+        if (err) return done(err);
+        else if(results != null && results._id.id != self._id.id) { //there was a result found, so the email address exists
+            self.invalidate("username", "username must be unique");
             var error = new Error();
             error.message = "Username already existing. Please try another.";
             error.status = 409;
             done(error);
-        } else if(err) {
-            done(err);
-        }  else {
+        }
+         else {
             done();
         }
     });

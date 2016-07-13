@@ -201,7 +201,7 @@ router.get("/", function(req, res, next) {
 router.get("/:idCategory", function(req, res, next) {
     try {
         req.app.get('mongoose').model('categories').
-        findOne({ _id : req.params.idCategory}, function(err, category) {
+        findOne({ id : req.params.idCategory}, function(err, category) {
             if (err) return next(err);
             else if (category == undefined || category == null)  return next(req.app.getError(404, "Not found : category unknown", null));
             else res.status(200).json({
@@ -225,7 +225,7 @@ router.put("/:idCategory",
             req.body.description == undefined || req.body.description == "")
             return next(req.app.getError(400, "Bad request: one or multiple parameters missing.", null));
         try {
-            req.app.get('mongoose').model('users').findOne({_id: req.user.id}, function (err, user) {
+            req.app.get('mongoose').model('users').findOne({id: req.user.id}, function (err, user) {
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
                 else if (user.admin != true) return next(req.app.getError(403, "Unauthorized : needs admin privileges", null));
@@ -237,7 +237,7 @@ router.put("/:idCategory",
     },
     function(req, res, next) {
         try {
-            req.app.get('mongoose').model('categories').findOne({ _id : req.params.idCategory }, function(err, category) {
+            req.app.get('mongoose').model('categories').findOne({ id : req.params.idCategory }, function(err, category) {
                 if (err) return next(err);
                 else if (category == null || category == undefined) return next(req.app.getError(404, "Not found : category unknown", null));
                 else {
@@ -271,7 +271,7 @@ router.post("/",
             req.body.description == undefined || req.body.description == "")
             return next(req.app.getError(400, "Bad request: one or multiple parameters missing.", null));
         try {
-            req.app.get('mongoose').model('users').findOne({_id: req.user.id}, function (err, user) {
+            req.app.get('mongoose').model('users').findOne({id: req.user.id}, function (err, user) {
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
                 else if (user.admin != true) return next(req.app.getError(403, "Unauthorized : needs admin privileges", null));

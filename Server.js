@@ -23,6 +23,19 @@ var categories = require('./routes/categories/categories');
 var comments = require('./routes/comments/comments');
 var mongo_express = require('mongo-express/lib/middleware');
 var mongo_express_config = require('./node_modules/mongo-express/config');
+var passport = require('passport');
+app.use(require("express-session")({
+    secret: process.env.jwtSecretKey,
+    resave: false,
+    saveUninitialized: false
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+require("./config/passport")(passport);
+require('./routes/auth/google')(app, passport);
+require("./routes/auth/facebook")(app, passport);
 
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -60,8 +73,6 @@ app.use('/api/applications', applications);
 app.use('/api/devices', devices);
 app.use('/api/categories', categories);
 app.use('/api/comments', comments);
-
-
 
 function setPathError () {
     app.get('*', function(req, res, next) {

@@ -55,7 +55,7 @@ router.get("/",
         if (req.user.id == "" || req.user.id == undefined)
             return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
         try {
-            req.app.get('mongoose').model('users').findOne({_id : req.user.id, admin : true}, function(err, user) {
+            req.app.get('mongoose').model('users').findOne({id : req.user.id, admin : true}, function(err, user) {
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
                 else next();
@@ -154,14 +154,14 @@ router.get("/:idUser",
     },
     function(req, res, next){
         try {
-            req.app.get('mongoose').model('users').findOne({_id: req.user.id}, function(err, user) {
+            req.app.get('mongoose').model('users').findOne({id: req.user.id}, function(err, user) {
                 if (err) return next(err);
                 else if (user == undefined || user == null) return next(req.app.getError(403, "Forbidden : invalid token", null));
-                else req.app.get('mongoose').model('users').findOne({_id: req.params.idUser}, function(err, userSearch) {
+                else req.app.get('mongoose').model('users').findOne({id: req.params.idUser}, function(err, userSearch) {
                         if (err) return next(err);
                         else if (userSearch == null || userSearch == undefined) return next(req.app.getError(404, "User not found", null));
                         else
-                        if (user.admin == true || user._id == userSearch._id)
+                        if (user.admin == true || user.id == userSearch.id)
                             res.status(200).json({
                                 status  : 200,
                                 message : "OK",
@@ -256,11 +256,11 @@ router.get("/:idUser/applications",
             return next(req.app.getError(404, "Bad request, parameter missing.", null));
         }
         try {
-            req.app.get('mongoose').model('users').findOne({_id : req.user.id}, function(err, user) {
+            req.app.get('mongoose').model('users').findOne({id : req.user.id}, function(err, user) {
                 if (err) return next(err);
                 else if (user == undefined || user == null) return next(req.app.getError(403, "Unauthorized : invalid token", null));
                 else {
-                    if (user._id == req.params.idUser || user.admin == true)
+                    if (user.id == req.params.idUser || user.admin == true)
                         next();
                     else return next(req.app.getError(403, "Unauthorized : user needs admin privileges.", null));
                 }
@@ -272,7 +272,7 @@ router.get("/:idUser/applications",
     },
     function(req, res, next) {
         try {
-            req.app.get('mongoose').model('users').findOne({_id : req.params.idUser}, function(err, searchUser) {
+            req.app.get('mongoose').model('users').findOne({id : req.params.idUser}, function(err, searchUser) {
                 if (err) return next(err);
                 else if (searchUser == undefined || searchUser == null) return next(req.app.getError(404, "User not found", null));
                 else searchUser.populate('applications').exec(function(err, final) {
@@ -349,10 +349,10 @@ router.delete("/:idUser",
             return next(req.app.getError(404, "Bad request, parameter missing.", null));
         }
         try {
-            req.app.get('mongoose').model('users').findOne({_id: req.user.id}, function (err, user) {
+            req.app.get('mongoose').model('users').findOne({id: req.user.id}, function (err, user) {
                 if (err) return next(err);
                 else if (user == undefined || user == null) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else if (user.admin == true || user._id == req.params.idUser) next();
+                else if (user.admin == true || user.id == req.params.idUser) next();
                 else return next(req.app.getError(403, "Unauthorized : user needs privileges.", null));
             });
         }
@@ -363,7 +363,7 @@ router.delete("/:idUser",
     },
     function(req, res, next) {
         try {
-            req.app.get('mongoose').model('users').findOneAndRemove({_id: req.params.idUser}, function(err) {
+            req.app.get('mongoose').model('users').findOneAndRemove({id: req.params.idUser}, function(err) {
                 if (err) return next(err);
                 else res.status(200).json({
                     status  : 200,
@@ -458,10 +458,10 @@ router.put("/:idUser",
             }
         }
         try {
-            req.app.get('mongoose').model('users').findOne({_id : req.user.id}, function(err, user) {
+            req.app.get('mongoose').model('users').findOne({id : req.user.id}, function(err, user) {
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else if (user.admin == true || user._id == req.params.idUser) {
+                else if (user.admin == true || user.id == req.params.idUser) {
                     return next(); // Accepte la requête si l'utilisateur est admin ou utilisateur à qui appartient le profil
                 }
                 else return next(req.app.getError(403, "Unauthorized : user needs privileges.", null));
@@ -472,7 +472,7 @@ router.put("/:idUser",
     },
     function(req, res, next){
         try {
-            req.app.get('mongoose').model('users').findOne({_id: req.params.idUser}, function(err, userSearch) {
+            req.app.get('mongoose').model('users').findOne({id: req.params.idUser}, function(err, userSearch) {
                 if (err) return next(err);
                 else if (userSearch == null || userSearch == undefined) return next(req.app.getError(404, "User not found", null));
                 else {
@@ -499,7 +499,7 @@ router.put("/:idUser",
                                 });
                             }
                             else {
-                                if (key != "_id")
+                                if (key != "id")
                                     userSearch[key] = req.body[key];
                             }
 
@@ -608,7 +608,7 @@ router.post("/",
                     if (key == "password")
                         newUser[key] = CryptoJS.SHA256(req.body[key]).toString();
                     else {
-                        if (key != "admin" && key != "_id")
+                        if (key != "admin" && key != "id")
                             newUser[key] = req.body[key];
                     }
                 }
@@ -662,10 +662,10 @@ router.get("/:idUser/comments",
             return next(req.app.getError(404, "Bad request, parameter missing.", null));
         }
         try {
-            req.app.get('mongoose').model('users').findOne({_id : req.user.id}, function(err, user) {
+            req.app.get('mongoose').model('users').findOne({id : req.user.id}, function(err, user) {
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else if (user.admin == true || user._id == req.params.idUser) {
+                else if (user.admin == true || user.id == req.params.idUser) {
                     return next(); // Accepte la requête si l'utilisateur est admin ou utilisateur à qui appartient le profil
                 }
                 else return next(req.app.getError(403, "Unauthorized : user needs privileges.", null));
@@ -710,11 +710,11 @@ router.get("/:idUser/comments/:idApp",
             return next(req.app.getError(400, "Bad request : parameter missing.", null));
         }
         try {
-            req.app.get('mongoose').model('users').findOne({_id : req.user.id}, function(err, user) {
+            req.app.get('mongoose').model('users').findOne({id : req.user.id}, function(err, user) {
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else if (user.admin == true || user._id == req.params.idUser) {
-                    req.app.get('mongoose').model('applications').find({ _id : req.params.idApp}, function(err, app) {
+                else if (user.admin == true || user.id == req.params.idUser) {
+                    req.app.get('mongoose').model('applications').find({ id : req.params.idApp}, function(err, app) {
                         if (err) return next(err);
                         else if (app == null || app == undefined) return next(req.app.getError(404, "Not found : application unknown."));
                         else next();
@@ -754,7 +754,7 @@ router.get('/:idUser/progressions/:idApp',
     expressjwt({secret: process.env.jwtSecretKey}),
     function(req, res, next) {
         try {
-            req.app.get('mongoose').model('users').findOne({_id : req.user.id}, function(err, user) {
+            req.app.get('mongoose').model('users').findOne({id : req.user.id}, function(err, user) {
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
                 else next();
@@ -765,7 +765,7 @@ router.get('/:idUser/progressions/:idApp',
     },
     function(req, res, next) {
         try {
-            req.app.get('mongoose').model('users').findOne({ _id : req.user.id, progressions : { application: req.params.idApp }}, function(err, user) {
+            req.app.get('mongoose').model('users').findOne({ id : req.user.id, progressions : { application: req.params.idApp }}, function(err, user) {
                 if (err) return next(err);
                 else if (user == undefined || user == null) return next(req.app.getError(404, "Not found : user probably doesn't possess this app."));
                 else res.status(200).json({
@@ -786,7 +786,7 @@ router.get('/:idUser/progressions',
     expressjwt({secret: process.env.jwtSecretKey}),
     function(req, res, next) {
         try {
-            req.app.get('mongoose').model('users').findOne({_id : req.user.id}, function(err, user) {
+            req.app.get('mongoose').model('users').findOne({id : req.user.id}, function(err, user) {
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
                 else next();
@@ -797,7 +797,7 @@ router.get('/:idUser/progressions',
     },
     function(req, res, next) {
         try {
-            req.app.get('mongoose').model('users').findOne({ _id : req.user.id }, function(err, user) {
+            req.app.get('mongoose').model('users').findOne({ id : req.user.id }, function(err, user) {
                 if (err) return next(err);
                 else if (user == undefined || user == null) return next(req.app.getError(404, "Not found : user probably doesn't possess this app."));
                 else res.status(200).json({

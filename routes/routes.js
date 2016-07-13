@@ -137,7 +137,7 @@ router.post("/connection",
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(401, "Authentication failed.", null));
                 else {
-                    var token = jwt.sign({id : user._id}, process.env.jwtSecretKey);
+                    var token = jwt.sign({id : user.id}, process.env.jwtSecretKey);
                     res.status(200).json({
                         status      : 200,
                         message     : "User authenticated.",
@@ -421,7 +421,7 @@ router.post("/sendFeedback",
         if (req.body.object == undefined || req.body.description == undefined)
             return next(req.app.getError(400, "Bad request, missing required parameter.", null));
         try {
-            Users.findOne({_id: req.user.id}, function(err, user) {
+            Users.findOne({id: req.user.id}, function(err, user) {
                 if (err) return next(error);
                 else if (user == undefined || user == null) return next(req.app.getError(403, "Forbidden: invalid token."));
                 else next();
@@ -510,7 +510,7 @@ router.get("/getFeedbacks",
         if (req.user.id == "" || req.user.id == undefined)
             return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
         try {
-            Users.findOne({_id: req.user.id, admin: true}, function (err, user) {
+            Users.findOne({id: req.user.id, admin: true}, function (err, user) {
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
                 else next();
@@ -601,7 +601,7 @@ router.get("/dashboardInfos",
         if (req.user.id == "" || req.user.id == undefined)
             return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
         try {
-            Users.findOne({_id: req.user.id, admin: true}, function (err, user) {
+            Users.findOne({id: req.user.id, admin: true}, function (err, user) {
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
                 else next();

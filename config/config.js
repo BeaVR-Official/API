@@ -20,11 +20,11 @@ if (process.env.VCAP_SERVICES) {
   mongo = {
     db:       'beavr',
     host:     'localhost',
-    password: 'pass',
+    password: '',
     port:     27017,
     ssl:      false,
     url:      'mongodb://localhost:27017/beavr',
-    username: 'admin',
+    username: ''
   };
 }
 
