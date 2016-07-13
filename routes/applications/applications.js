@@ -741,4 +741,48 @@ router.post("/",function(req,res){
     });
 });
 
+router.post("/userHasTheApplication",function(req,res){
+
+    var query = "SELECT * FROM ?? WHERE ?? = ?";
+    var table = ["Purchases", "buyer", req.body.idUser];
+
+    query = mysql.format(query,table);
+
+    console.log(query);
+
+    req.app.locals.connection.query(query,function(err,rows){
+        if(err) {
+            res.json({"Error" : true, "Code" : 102, "Message" : err}); //ERROR
+        } else {
+
+            console.log("lenght");
+            console.log(rows.length);
+            if (rows.length == 0)
+              res.json({"Error" : false, "Code" : 1, "Message" : rows, "Canbuy" : true}); //OK the user can buy the application
+            else
+              res.json({"Error" : false, "Code" : 1, "Message" : rows, "Canbuy" : false}); //ERROR the user has already the application
+        }
+    });
+});
+
+router.post("/addToLibrary",function(req,res){
+
+    var dateOftheDay = (new Date ((new Date((new Date(new Date())).toISOString() )).getTime() - ((new Date()).getTimezoneOffset()* 60000))).toISOString().slice(0, 19).replace('T', ' ');
+
+    var query = "INSERT INTO ?? (??, ??, ??, ??, ??, ??, ??) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    var table = ["Purchases", "purchaseDate", "application", "retailer", "buyer", "price", "commission", "originalPrice", dateOftheDay,
+    req.body.application, req.body.retailer, req.body.buyer, req.body.price, req.body.commission, req.body.originalPrice];
+
+    query = mysql.format(query,table);
+
+    console.log(query);
+    req.app.locals.connection.query(query,function(err,rows){
+        if(err) {
+            res.json({"Error" : true, "Code" : 102, "Message" : err}); //ERROR
+        } else {
+            res.json({"Error" : false, "Code" : 1, "Message" : rows}); //OK
+        }
+    });
+});
+
 module.exports = router;
