@@ -7,6 +7,7 @@ var Schema = mongoose.Schema;
 var ObjectId = Schema.Types.ObjectId;
 
 var applicationsSchema = new Schema({
+    id              : {type : String, unique: true },
     name            : { type: String, required: true, unique: true },
     description     : { type: String, required: true },
     logo            : String,
@@ -24,6 +25,7 @@ applicationsSchema.pre('save', true, function(next, done) {
     this.updated_at = currentDate;
     if (!this.created_at)
         this.created_at = currentDate;
+    this.id = this._id.toHexString();
     var self = this;
     mongoose.models["applications"].findOne({name : self.name},function(err, results) {
         if(results) { //there was a result found, so the email address exists

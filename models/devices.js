@@ -6,12 +6,14 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var devicesSchema = new Schema({
+    id              : {type : String, unique: true },
     name            : { type: String, required: true, unique: true },
     image           : String
 });
 
 devicesSchema.pre('save', true, function(next, done) {
     var self = this;
+    this.id = this._id.toHexString();
     mongoose.models["applications"].findOne({name : self.name},function(err, results) {
         if(results) { //there was a result found, so the email address exists
             self.invalidate("name","Device name must be unique");

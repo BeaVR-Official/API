@@ -7,6 +7,7 @@ var Schema = mongoose.Schema;
 var ObjectId = Schema.Types.ObjectId;
 
 var userSchema = new Schema({
+    id              : {type : String, unique: true },
     pseudo          : { type: String, required: true, unique: true, default:"" },
     password        : { type: String, required: true, default: "" },
     lastName        : { type: String, default: ""},
@@ -53,6 +54,7 @@ userSchema.pre('save', true, function(next, done) {
     this.public.email = this.email;
     this.public.picture = this.picture;
     this.public.created_at = this.created_at;
+    this.id = this._id.toHexString();
     var self = this;
     mongoose.models["users"].findOne({pseudo : self.pseudo},function(err, results) {
         if (err) return done(err);

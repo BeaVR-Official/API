@@ -7,6 +7,7 @@ var Schema = mongoose.Schema;
 var ObjectId = Schema.Types.ObjectId;
 
 var commentsSchema = new Schema({
+    id              : {type : String, unique: true },
     title           : { type: String, required: true },
     comment         : { type: String, required: true },
     rating          : Number,
@@ -21,6 +22,7 @@ commentsSchema.pre('save', true, function(next, done) {
     this.updated_at = currentDate;
     if (!this.created_at)
         this.created_at = currentDate;
+    this.id = this._id.toHexString();
     if (this.title == undefined || this.title == "") {
         var error = new Error();
         error.message = "Title field cannot be empty.";
@@ -29,6 +31,8 @@ commentsSchema.pre('save', true, function(next, done) {
     }
     next();
 });
+
+
 
 var comments = mongoose.model('comments', commentsSchema);
 

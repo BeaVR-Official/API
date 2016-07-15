@@ -5,7 +5,8 @@
 var express = require('express');
 var router = express.Router();
 var expressjwt = require('express-jwt');
-
+var Users = require('../../models/users');
+var Categories = require('../../models/categories');
 
 /**
  * @api {get} /categoryTypes/ Liste des thèmes
@@ -155,7 +156,7 @@ router.post("/categoryTypes", function(req,res, next){
 router.get("/", function(req, res, next) {
     try {
         if (req.query["name"] != undefined && req.query.name != "")
-            req.app.get('mongoose').model('categories').findOne({name: req.query.name}, function(err, category) {
+            Categories.findOne({name: req.query.name}, function(err, category) {
                 if (err) return next(error);
                 else res.status(200).json({
                     status          : 200,
@@ -166,7 +167,7 @@ router.get("/", function(req, res, next) {
                 });
             });
         else
-            req.app.get('mongoose').model('categories').
+            Categories.
             find({}).
             sort({name: (req.query["order"] && req.query.order == "ASC") ? 1 : -1}).
             exec(function(err, categories) {
@@ -200,7 +201,7 @@ router.get("/", function(req, res, next) {
 
 router.get("/:idCategory", function(req, res, next) {
     try {
-        req.app.get('mongoose').model('categories').
+        Categories.
         findOne({ id : req.params.idCategory}, function(err, category) {
             if (err) return next(err);
             else if (category == undefined || category == null)  return next(req.app.getError(404, "Not found : category unknown", null));
@@ -225,7 +226,7 @@ router.put("/:idCategory",
             req.body.description == undefined || req.body.description == "")
             return next(req.app.getError(400, "Bad request: one or multiple parameters missing.", null));
         try {
-            req.app.get('mongoose').model('users').findOne({id: req.user.id}, function (err, user) {
+            Users.findOne({id: req.user.id}, function (err, user) {
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
                 else if (user.admin != true) return next(req.app.getError(403, "Unauthorized : needs admin privileges", null));
@@ -237,7 +238,7 @@ router.put("/:idCategory",
     },
     function(req, res, next) {
         try {
-            req.app.get('mongoose').model('categories').findOne({ id : req.params.idCategory }, function(err, category) {
+            Categories.findOne({ id : req.params.idCategory }, function(err, category) {
                 if (err) return next(err);
                 else if (category == null || category == undefined) return next(req.app.getError(404, "Not found : category unknown", null));
                 else {
@@ -271,7 +272,7 @@ router.post("/",
             req.body.description == undefined || req.body.description == "")
             return next(req.app.getError(400, "Bad request: one or multiple parameters missing.", null));
         try {
-            req.app.get('mongoose').model('users').findOne({id: req.user.id}, function (err, user) {
+            Users.findOne({id: req.user.id}, function (err, user) {
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
                 else if (user.admin != true) return next(req.app.getError(403, "Unauthorized : needs admin privileges", null));
@@ -283,7 +284,7 @@ router.post("/",
     },
     function(req, res, next) {
         try {
-            var newCategory = req.app.get('mongoose').model('categories')({
+            var newCategory = Categories({
                 name        : req.body.name,
                 description : req.body.description
             });

@@ -6,12 +6,14 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var categoriesSchema = new Schema({
+    id              : {type : String, unique: true },
     name            : { type: String, required: true, unique: true },
     description     : { type: String, required: true }
 });
 
 categoriesSchema.pre('save', true, function(next, done) {
     var self = this;
+    this.id = this._id.toHexString();
     mongoose.models["applications"].findOne({name : self.name},function(err, results) {
         if(results) { //there was a result found, so the email address exists
             self.invalidate("name","Category name must be unique");

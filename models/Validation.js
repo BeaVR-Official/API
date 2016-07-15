@@ -8,6 +8,7 @@ var ObjectId = Schema.Types.ObjectId;
 
 
 var ValidationSchema = new Schema({
+    id              : {type : String, unique: true },
     type                : { type: String, required: true},
     application         : {
         name            : { type: String, required: true, unique: true },
@@ -33,6 +34,7 @@ var ValidationSchema = new Schema({
 
 ValidationSchema.pre('save',function(next) {
     var currentDate = new Date();
+    this.id = this._id.toHexString();
     this.updated_at = currentDate;
     if (!this.created_at)
         this.created_at = currentDate;
@@ -40,6 +42,7 @@ ValidationSchema.pre('save',function(next) {
 });
 
 
-var applications = mongoose.model('validation', ValidationSchema);
 
-module.exports = applications;
+var validation = mongoose.model('validation', ValidationSchema);
+
+module.exports = validation;

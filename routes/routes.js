@@ -79,7 +79,7 @@ router.get("/", function(req, res, next){
   *       "Code" : 100
   *     }
  *
- */
+ */  // -------> Checked!!
 router.post("/registration", function(req,res, next) {
     return next(req.app.getError(404, "Request deprecated. See POST /api/users", {}));
 });
@@ -123,7 +123,7 @@ router.post("/registration", function(req,res, next) {
   *       "Code" : 102
   *     }
  *
- */
+ */ // -------> Checked!!
 router.post("/connection",
     function(req, res, next) {
         if (req.body.email == undefined || req.body.password == undefined) {

@@ -38,7 +38,7 @@ module.exports = function(app, passport) {
     app.get('/auth/google/callback',
         passport.authenticate('google', {
             successRedirect : '/auth/google/logSuccess',
-            failureRedirect : '/auth/google/logFailed',
+            failureRedirect : '/auth/google/logFailed'
         }));
 
 };

@@ -7,6 +7,7 @@ var Schema = mongoose.Schema;
 var ObjectId = Schema.Types.ObjectId;
 
 var feedbackSchema = new Schema({
+    id          : { type : String, unique: true },
     user        : { type: ObjectId, required: true, ref : 'users' },
     object      : { type: String, required: true },
     description : { type: String, required: true},
@@ -17,6 +18,7 @@ var feedbackSchema = new Schema({
 
 feedbackSchema.pre('save', true, function(next) {
     var currentDate = new Date();
+    this.id = this._id.toHexString();
     this.updated_at = currentDate;
     if (!this.created_at)
         this.created_at = currentDate;
