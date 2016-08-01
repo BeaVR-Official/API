@@ -7,7 +7,7 @@ var router = express.Router();
 var expressjwt = require('express-jwt');
 var Applications = require('../../models/applications');
 var Users = require('../../models/users');
-var Validation = require('../../models/validation');
+var Validation = require('../../models/Validation');
 var Comments = require('../../models/comments');
 
 /**
