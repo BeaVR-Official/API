@@ -69,9 +69,9 @@ app.getError = function(status,message, err) {
     return error;
 };
 
-fs.readdirSync(__dirname + '/models').forEach(function(filename) {
+/*fs.readdirSync(__dirname + '/models').forEach(function(filename) {
     if (~filename.indexOf('.js')) require(__dirname + '/models/' + filename);
-});
+});*/
 
 mongoose.connect('mongodb://127.0.0.1/beavr');
 

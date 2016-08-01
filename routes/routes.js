@@ -138,11 +138,13 @@ router.post("/connection",
                 else if (user == null || user == undefined) return next(req.app.getError(401, "Authentication failed.", null));
                 else {
                     var token = jwt.sign({id : user.id}, process.env.jwtSecretKey);
+                    user.token = token;
                     res.status(200).json({
                         status      : 200,
                         message     : "User authenticated.",
                         data        : {
-                            token   : token
+                            token   : token,
+                            userId  : user.id
                         }
                     });
                 }
@@ -199,6 +201,46 @@ router.post("/connection",
          catch (error) {
          return next(error);
          }*/
+    }
+);
+
+router.get('/validateToken',
+    function(req, res, next) {
+        if (req.headers.authorization == "null")
+            return res.status(200).json({
+                status      : 200,
+                message     : "Valid Token",
+                data        : {
+                    valide  : false,
+                    userId  : null
+                }
+            });
+
+        try {
+            var userId = jwt.verify(req.headers['authorization']).id;
+            if (userId == undefined || userId == null)
+                return res.status(200).json({
+                    status      : 200,
+                    message     : "Valid Token",
+                    data        : {
+                        valide  : false,
+                        userId  : null
+                    }
+                });
+            Users.findOne({ id: userId, token: req.headers['authorization']}, function(err, user) {
+                if (err) return next(err);
+                else res.status(200).json({
+                        status      : 200,
+                        message     : "Valid Token",
+                        data        : {
+                            valide  : (user == undefined || user == null) ? false : true,
+                            userId  : (user == undefined || user == null) ? null : user.id
+                        }
+                    });
+            });
+        } catch (error) {
+            return next(error);
+        }
     }
 );
 

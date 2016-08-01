@@ -41,6 +41,7 @@ var userSchema = new Schema({
         gender      : String,
         facebookurl : String
     },
+    token           : String,
     created_at      : Date,
     updated_at      : Date
 });
