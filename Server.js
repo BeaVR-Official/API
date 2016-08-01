@@ -12,6 +12,10 @@ process.env.jwtSecretKey = 'XSVgtQ\;>1!\,z`\,xDA*zMzs|#\$Iku-`P(l9p.u/1IO][#wKs\
 process.env.NODE_ENV = "debug";
 process.env.dataServer = "http://5.196.88.52:5001/";
 
+fs.readdirSync(__dirname + '/models').forEach(function(filename) {
+ if (~filename.indexOf('.js')) require(__dirname + '/models/' + filename);
+ });
+
 var config = require('config');
 var app  = express();
 
@@ -69,9 +73,7 @@ app.getError = function(status,message, err) {
     return error;
 };
 
-/*fs.readdirSync(__dirname + '/models').forEach(function(filename) {
-    if (~filename.indexOf('.js')) require(__dirname + '/models/' + filename);
-});*/
+
 
 mongoose.connect('mongodb://127.0.0.1/beavr');
 
