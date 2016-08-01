@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "scripts": {
     "test": "node Server.js & sleep 2 && make test",
-    "start": "node Server.js "
+    "start": "cp ./config/config.js ./node_modules/mongo-express/ && node Server.js "
   },
   "dependencies": {
     "MD5": "~1.2.1",
