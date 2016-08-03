@@ -10,7 +10,7 @@ var commentsSchema = new Schema({
     id              : {type : String, unique: true },
     title           : { type: String, required: true },
     comment         : { type: String, required: true },
-    rating          : Number,
+    rating          : { type: Number, min: 0, max: 5, default: 0},
     author          : { type: ObjectId, required: true, ref: 'users' },
     application     : { type: ObjectId, required: true, ref: 'applications'},
     created_at      : Date,
@@ -31,8 +31,6 @@ commentsSchema.pre('save', true, function(next, done) {
     }
     next();
 });
-
-
 
 var comments = mongoose.model('comments', commentsSchema);
 

@@ -16,6 +16,8 @@ var applicationsSchema = new Schema({
     devicesNames    : [{ type: ObjectId, ref : 'devices'}],
     price           : { type: Number, required: true, min: 0, max: 99, default: 0},
     author          : {type: ObjectId, ref: 'users', required: true},
+    noteAvg         : {type: Number, default: 0},
+    commentsNb      : {type: Number, default: 0},
     created_at      : Date,
     updated_at      : Date
 });

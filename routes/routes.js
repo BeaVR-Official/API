@@ -338,7 +338,7 @@ router.post("/reset-password",
     },
     function(req,res, next){
         try {
-            User.findOne({email : req.body.email}, function(error, user) {
+            Users.findOne({email : req.body.email}, function(err, user) {
                 if (err) return next(err);
                 else if (user == null || user == undefined) return next(req.app.getError(404, "User not found.", null));
                 else {

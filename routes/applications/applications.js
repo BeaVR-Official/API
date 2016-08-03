@@ -7,7 +7,7 @@ var router = express.Router();
 var expressjwt = require('express-jwt');
 var Applications = require('../../models/applications');
 var Users = require('../../models/users');
-var Validation = require('../../models/Validation');
+var Validation = require('../../models/validation');
 var Comments = require('../../models/comments');
 
 /**
@@ -67,7 +67,6 @@ router.get("/", function(req, res, next) {
                 else
                     query[key] = req.query[key];
             }
-
         }
         Applications.find(query, function(err, applications) {
             if (err) return next(err);
@@ -1072,15 +1071,41 @@ router.post("/:idApp/comments",
                 title       : req.body.title,
                 comment     : req.body.comment,
                 rating      : req.body.rating,
-                application : req.params.idApp
+                application : ObjectId(req.params.idApp)
+            });
+
+            Comments.find({application: ObjectId(req.params.idApp)}, function(err, comments) {
+                if(err) return next(err);
+                else {
+                    var avg = 0;
+                    var commentNb = (comments != undefined && comments != null) ? comments.length : 0;
+                    var total = 0;
+                    for (var comment in comments) {
+                        total += comment.rating;
+                    }
+                    if (commentNb > 0)
+                        avg = total / commentNb;
+                    Applications.findOne({id: req.params.idApp}, function(err, application){
+                        if (err || applications == null || application == undefined) return;
+                        else {
+                            application.noteAvg = avg;
+                            application.commentsNb = commentNb;
+                            application.save(function(err) {
+                                if (err) return;
+                            });
+                        }
+                    });
+                }
             });
             newComment.save(function(err){
                 if (err) return next(err);
-                else res.status(200).json({
-                    status      : 200,
-                    message     : "OK",
-                    data        : {}
-                });
+                else {
+                    res.status(200).json({
+                        status      : 200,
+                        message     : "OK",
+                        data        : {}
+                    });
+                }
             });
         } catch (error) {
             return next(error);

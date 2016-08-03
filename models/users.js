@@ -12,7 +12,7 @@ var userSchema = new Schema({
     password        : { type: String, required: true, default: "" },
     lastName        : { type: String, default: ""},
     firstName       : { type: String, default: ""},
-    email           : { type: String, default: ""},
+    email           : { type: String, default: "", unique: true},
     picture         : { type: String, default : "http://www.outsystems.com/PortalTheme/img/UserImage.png?23465" },
     applications    : [{ type: ObjectId, ref: 'applications'}],
     progressions    : [{
@@ -60,14 +60,26 @@ userSchema.pre('save', true, function(next, done) {
     mongoose.models["users"].findOne({pseudo : self.pseudo},function(err, results) {
         if (err) return done(err);
         else if(results != null && results._id.id != self._id.id) { //there was a result found, so the email address exists
-            self.invalidate("username", "username must be unique");
+            self.invalidate("pseudo", "username must be unique");
             var error = new Error();
-            error.message = "Username already existing. Please try another.";
+            error.message = "Pseudo already existing. Please try another.";
             error.status = 409;
             done(error);
         }
          else {
-            done();
+            mongoose.models["users"].findOne({email : self.email},function(err, results) {
+                if (err) return done(err);
+                else if (results != null && results._id.id != self._id.id) {
+                    self.invalidate("email", "email must be unique");
+                    var error = new Error();
+                    error.message = "Email already existing. Please try another.";
+                    error.status = 409;
+                    done(error);
+                }
+                else {
+                    done();
+                }
+            });
         }
     });
     next();
