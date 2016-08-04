@@ -9,6 +9,7 @@ var Applications = require('../../models/applications');
 var Users = require('../../models/users');
 var Validation = require('../../models/validation');
 var Comments = require('../../models/comments');
+var ObjectId = require('mongoose').Types.ObjectId;
 
 /**
  * @api {get} /applications/ Liste des applications
@@ -51,51 +52,101 @@ var Comments = require('../../models/comments');
 *     }
  *
  */
-router.get("/", function(req, res, next) {
-    try {
-        var query = {};
-        var schema = {
-            name            : "",
-            categoriesName  : [],
-            devicesNames    : [],
-            authorNamme     : ""
-        };
-        for (var key in req.query) {
-            if (req.query[key] != undefined && schema[key] != undefined) {
-                if ((key == "categoriesName" || key == "devicesName") && Array.isArray(req.query[key]))
-                    query[key] = req.query[key];
-                else
-                    query[key] = req.query[key];
+
+function depileApplications(applications, next) {
+    if (applications.length <= 0)
+        return next();
+    Comments.aggregate(
+        [
+            {$match: {application: new ObjectId(applications[applications.length - 1].id)}},
+            {
+                $group: {
+                    _id: applications[applications.length - 1].id,
+                    average: {$avg: "$rating"},
+                    count: {$sum: 1}
+                }
             }
-        }
-        Applications.find(query, function(err, applications) {
-            if (err) return next(err);
-            else res.status(200).json({
-                status          : 200,
-                message         : "OK",
-                data            : (applications == undefined || applications == null) ? { count : 0 }: {
-                    count       : applications.length,
-                    application : applications
+        ],
+        function (err, result) {
+                Applications.findOne({id: (result.length > 0) ? result[0]._id : 0 }, function (err, res) {
+                    if (res != null && res != undefined) {
+                        res.noteAvg = result[0].average;
+                        res.commentsNb = result[0].count;
+                        res.save().then(function () {
+                            applications.pop();
+                            console.log("save");
+                            depileApplications(applications, next);
+                        })
+                    }
+                    else {
+                        console.log("save");
+                        applications.pop();
+                        depileApplications(applications, next);
+                    }
+                });
+            }
+    );
+}
+
+router.get("/",
+    function(req, res, next) {
+        Applications.find(function(err, applications) {
+            if (err) return next();
+            else if (applications == null || applications == undefined) return next();
+            else {
+                depileApplications(applications, next);
+            }
+        });
+    },
+    function(req, res, next) {
+        try {
+            var query = {};
+            var schema = {
+                name            : "",
+                categoriesName  : [],
+                devicesNames    : [],
+                authorNamme     : ""
+            };
+            for (var key in req.query) {
+                if (req.query[key] != undefined && schema[key] != undefined) {
+                    if ((key == "categoriesName" || key == "devicesName") && Array.isArray(req.query[key]))
+                        query[key] = req.query[key];
+                    else
+                        query[key] = req.query[key];
+                }
+            }
+            Applications.find(query, function(err, applications) {
+                if (err) return next(err);
+                else {
+                    console.log("send");
+                    return res.status(200).json({
+                        status: 200,
+                        message: "OK",
+                        data: (applications == undefined || applications == null) ? {count: 0} : {
+                            count: applications.length,
+                            application: applications
+                        }
+                    });
                 }
             });
-        });
-    } catch (error) {
-        return next(error);
-    }
-    /*    try {
-     var query = "SELECT * FROM `AllApplicationsInfos`";
+        }
+        catch (error) {
+            return next(error);
+        }
+        /*    try {
+         var query = "SELECT * FROM `AllApplicationsInfos`";
 
-     req.app.locals.connection.query(query, function(err, rows){
-     if (!err)
-     res.status(200).json({status: 200, message: "OK", data: {Applications: rows}});
-     else
-     return next(req.app.getError(500, "Internal error width database", err));
-     });
-     }
-     catch (error) {
-     return next(error);
-     }*/
-});
+         req.app.locals.connection.query(query, function(err, rows){
+         if (!err)
+         res.status(200).json({status: 200, message: "OK", data: {Applications: rows}});
+         else
+         return next(req.app.getError(500, "Internal error width database", err));
+         });
+         }
+         catch (error) {
+         return next(error);
+         }*/
+    });
 
 /* GET /applications/pending
  * Retourne la liste des applications en attente de validation
@@ -347,7 +398,17 @@ router.get("/pending/:idApp",
 *       "Code" : 102
 *     }
  */
-router.get("/:idApplication", function(req, res, next) {
+router.get("/:idApplication",
+    function(req, res, next) {
+        Applications.find(function(err, applications) {
+            if (err) return next();
+            else if (applications == null || applications == undefined) return next();
+            else {
+                depileApplications(applications, next);
+            }
+        });
+    },
+    function(req, res, next) {
     try {
         Applications.findOne({ id : req.params.idApplication }, function(err, app) {
             if (err) return next(err);
@@ -1074,29 +1135,6 @@ router.post("/:idApp/comments",
                 application : ObjectId(req.params.idApp)
             });
 
-            Comments.find({application: ObjectId(req.params.idApp)}, function(err, comments) {
-                if(err) return next(err);
-                else {
-                    var avg = 0;
-                    var commentNb = (comments != undefined && comments != null) ? comments.length : 0;
-                    var total = 0;
-                    for (var comment in comments) {
-                        total += comment.rating;
-                    }
-                    if (commentNb > 0)
-                        avg = total / commentNb;
-                    Applications.findOne({id: req.params.idApp}, function(err, application){
-                        if (err || applications == null || application == undefined) return;
-                        else {
-                            application.noteAvg = avg;
-                            application.commentsNb = commentNb;
-                            application.save(function(err) {
-                                if (err) return;
-                            });
-                        }
-                    });
-                }
-            });
             newComment.save(function(err){
                 if (err) return next(err);
                 else {

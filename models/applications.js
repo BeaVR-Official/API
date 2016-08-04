@@ -30,7 +30,7 @@ applicationsSchema.pre('save', true, function(next, done) {
     this.id = this._id.toHexString();
     var self = this;
     mongoose.models["applications"].findOne({name : self.name},function(err, results) {
-        if(results) { //there was a result found, so the email address exists
+        if(results && results._id.id != self._id.id) { //there was a result found, so the email address exists
             self.invalidate("name","name must be unique");
             var error = new Error();
             error.message = "Application name already existing. Please try another.";
