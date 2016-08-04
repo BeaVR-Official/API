@@ -10,7 +10,7 @@ var applicationsSchema = new Schema({
     id              : {type : String, unique: true },
     name            : { type: String, required: true, unique: true },
     description     : { type: String, required: true },
-    logo            : String,
+    logo            : [{type: String}],
     url             : String,
     categoriesName  : [{ type: ObjectId, ref: 'categories'}],
     devicesNames    : [{ type: ObjectId, ref : 'devices'}],

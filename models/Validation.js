@@ -13,7 +13,7 @@ var ValidationSchema = new Schema({
     application         : {
         name            : { type: String, required: true, unique: true },
         description     : { type: String, required: true },
-        logo            : String,
+        logo            : [{ type:String }],
         url             : String,
         categoriesName  : [{ type: ObjectId, ref: 'categories'}],
         devicesNames    : [{ type: ObjectId, ref : 'devices'}],

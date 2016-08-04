@@ -12,6 +12,7 @@ var shortid = require('shortid');
 var Users = require('../../models/users');
 var Comments = require('../../models/comments');
 var Applications = require('../../models/applications');
+var Rights = require('../../models/rights');
 
 
 /**
@@ -70,7 +71,7 @@ router.get("/",
     },
     function(req, res, next){
         try {
-            Users.find(function(err, users) {
+            Users.find().populate('rights').populate('author', "public").exec(function(err, users) {
                 if (err) return next(err);
                 else res.status(200).json({
                     status      : 200,
@@ -161,7 +162,7 @@ router.get("/:idUser",
             Users.findOne({id: req.user.id}, function(err, user) {
                 if (err) return next(err);
                 else if (user == undefined || user == null) return next(req.app.getError(403, "Forbidden : invalid token", null));
-                else Users.findOne({id: req.params.idUser}, function(err, userSearch) {
+                else Users.findOne({id: req.params.idUser}).populate("rights").populate("author", "public").exec(function(err, userSearch) {
                         if (err) return next(err);
                         else if (userSearch == null || userSearch == undefined) return next(req.app.getError(404, "User not found", null));
                         else
@@ -276,21 +277,18 @@ router.get("/:idUser/applications",
     },
     function(req, res, next) {
         try {
-            Users.findOne({id : req.params.idUser}, function(err, searchUser) {
+            Users.findOne({id : req.params.idUser}).populate('applications').exec(function(err, searchUser) {
                 if (err) return next(err);
                 else if (searchUser == undefined || searchUser == null) return next(req.app.getError(404, "User not found", null));
-                else searchUser.populate('applications').exec(function(err, final) {
-                        if (err) return next(err);
-                        else res.status(200).json({
+                else  res.status(200).json({
                             status          : 200,
                             message         : "OK",
                             data            : {
-                                count       : final.applications.length,
-                                applications: final.applications
+                                count       : searchUser.applications.length,
+                                applications: searchUser.applications
                             }
                         });
                     });
-            });
         }
         catch (error) {
             return next(error);

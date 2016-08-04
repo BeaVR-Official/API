@@ -3,6 +3,7 @@
  */
 
 var mongoose = require('mongoose');
+var timestamps = require('mongoose-timestamp');
 var Schema = mongoose.Schema;
 var ObjectId = Schema.Types.ObjectId;
 
@@ -20,8 +21,9 @@ var commentsSchema = new Schema({
 commentsSchema.pre('save', true, function(next, done) {
     var currentDate = new Date();
     this.updated_at = currentDate;
-    if (!this.created_at)
+    if (!this.created_at) {
         this.created_at = currentDate;
+    }
     this.id = this._id.toHexString();
     if (this.title == undefined || this.title == "") {
         var error = new Error();
@@ -31,6 +33,9 @@ commentsSchema.pre('save', true, function(next, done) {
     }
     next();
 });
+
+commentsSchema.plugin(timestamps);
+
 
 var comments = mongoose.model('comments', commentsSchema);
 

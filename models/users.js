@@ -20,6 +20,7 @@ var userSchema = new Schema({
         progression : { type: Number, default: 0}
     }],
     admin           : { type: Boolean, default: false},
+    rights           : { type: ObjectId, ref: 'rights', default:ObjectId("57a3609edfc0aa2381bde52e") },
     public          : {
         pseudo      : String,
         email       : String,

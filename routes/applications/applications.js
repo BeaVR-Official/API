@@ -10,7 +10,6 @@ var Users = require('../../models/users');
 var Validation = require('../../models/validation');
 var Comments = require('../../models/comments');
 var ObjectId = require('mongoose').Types.ObjectId;
-
 /**
  * @api {get} /applications/ Liste des applications
  * @apiVersion 1.0.0
@@ -105,7 +104,7 @@ router.get("/",
                 name            : "",
                 categoriesName  : [],
                 devicesNames    : [],
-                authorNamme     : ""
+                authorName     : ""
             };
             for (var key in req.query) {
                 if (req.query[key] != undefined && schema[key] != undefined) {
@@ -577,7 +576,7 @@ router.post("/",
         if (req.body.name == undefined || req.body.name == "" ||
             req.body.description == undefined || req.body.description == "" ||
             req.body.price == undefined || req.body.price == "" ||
-            req.body.logo == undefined || req.body.logo == "" ||
+            req.body.logo == undefined || req.body.logo.length <= 0 ||
             req.body.url == undefined || req.body.url == "" ||
             req.body.devices == undefined || req.body.devices == "" ||
             req.body.categories == undefined || req.body.categories == "")
@@ -941,18 +940,20 @@ router.get("/:idApp/comments",
     function(req,res, next){
         try {
             Comments.find({ application: req.params.idApp }).
+            populate("author", "public").
             sort({created_at: (req.query["order"] && req.query["order"] == "ASC") ? 1 : -1}).
             limit((req.query["limit"] && isNaN(parseInt(req.query["limit"])) == false) ? parseInt(req.query["limit"]) : 999).
             exec(function(err, comments) {
-                if (err) return next(err);
-                else res.status(200).json({
-                    status      : 200,
-                    message     : "OK",
-                    data        : {
-                        count   : (comments == undefined || comments == null) ? 0 : comments.length,
-                        comments: (comments == undefined || comments == null) ? [] : comments
-                    }
-                });
+                if (!err) {
+                    res.status(200).json({
+                        status: 200,
+                        message: "OK",
+                        data: {
+                            count: (comments == undefined || comments == null) ? 0 : comments.length,
+                            comments: (comments == undefined || comments == null) ? [] : comments
+                        }
+                    });
+                } else return next(err);
             });
         } catch(error) {
             return next(error);
