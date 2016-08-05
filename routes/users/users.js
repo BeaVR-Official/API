@@ -12,8 +12,7 @@ var shortid = require('shortid');
 var Users = require('../../models/users');
 var Comments = require('../../models/comments');
 var Applications = require('../../models/applications');
-var Rights = require('../../models/rights');
-
+var permissions = require("../permissions");
 
 /**
  * @api {get} /users Liste des utilisateurs
@@ -56,19 +55,7 @@ var Rights = require('../../models/rights');
  */
 router.get("/",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next) {
-        if (req.user.id == "" || req.user.id == undefined)
-            return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
-        try {
-            Users.findOne({id : req.user.id, admin : true}, function(err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
-                else next();
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
+    permissions(["admin"]),
     function(req, res, next){
         try {
             Users.find().populate('rights').populate('author', "public").exec(function(err, users) {
@@ -85,26 +72,6 @@ router.get("/",
         } catch (error) {
             return next(error);
         }
-        /*    try {
-         if (req.user.role == 'Administrator') {
-         var query = "SELECT * FROM ??";
-         var table = ["AllUsersInfos"];
-
-         query = mysql.format(query, table);
-
-         req.app.locals.connection.query(query, function(err, rows){
-         if (!err)
-         res.status(200).json({status : 200, message : "OK", data: { Users: rows }});
-         else
-         return next(req.app.getError(500, "Internal error width database", err));
-         });
-         } else {
-         return next(req.app.getError(403, "Forbidden : user needs privileges.", null));
-         }
-         }
-         catch (error) {
-         return next(error);
-         }*/
     }
 );
 
@@ -149,14 +116,7 @@ router.get("/",
 // modifier avec length = 0
 router.get("/:idUser",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next) {
-        if (req.user.id == "" || req.user.id == undefined)
-            return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
-        if (req.params.idUser == undefined || req.params.idUser == "") {
-            return next(req.app.getError(404, "Bad request, parameter missing.", null));
-        }
-        next();
-    },
+    permissions(["logged"]),
     function(req, res, next){
         try {
             Users.findOne({id: req.user.id}, function(err, user) {
@@ -182,30 +142,6 @@ router.get("/:idUser",
         } catch (error) {
             return next(error);
         }
-        /*    try {
-         if (req.user.role == 'Administrator') {
-         var query = "SELECT * FROM ?? WHERE ??=?";
-         var table = ["AllUsersInfos", "idUser", req.params.idUser];
-
-         query = mysql.format(query, table);
-         req.app.locals.connection.query(query, function(err, rows){
-         if (!err)
-         {
-         if (rows.length == 0)
-         return next(req.app.getError(404, "User not found", null)); // <---- Should be modified
-         else
-         res.status(200).json({status : 200, message : "OK", data: { Users: rows[0] }});
-         }
-         else
-         return next(req.app.getError(500, "Internal error width database", err));
-         });
-         } else {
-         return next(req.app.getError(403, "Forbidden : user needs privileges.", null));
-         }
-         }
-         catch (error) {
-         return next(error);
-         }*/
     }
 );
 
@@ -254,27 +190,7 @@ router.get("/applications", function(req, res, next) {
 // /users/:idUser/applications
 router.get("/:idUser/applications",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next) {
-        if (req.user.id == "" || req.user.id == undefined)
-            return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
-        if (req.params.idUser == undefined || req.params.idUser == "") {
-            return next(req.app.getError(404, "Bad request, parameter missing.", null));
-        }
-        try {
-            Users.findOne({id : req.user.id}, function(err, user) {
-                if (err) return next(err);
-                else if (user == undefined || user == null) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else {
-                    if (user.id == req.params.idUser || user.admin == true)
-                        next();
-                    else return next(req.app.getError(403, "Unauthorized : user needs admin privileges.", null));
-                }
-            });
-        }
-        catch (error) {
-            return next(error);
-        }
-    },
+    permissions(["admin", "me"]),
     function(req, res, next) {
         try {
             Users.findOne({id : req.params.idUser}).populate('applications').exec(function(err, searchUser) {
@@ -293,24 +209,6 @@ router.get("/:idUser/applications",
         catch (error) {
             return next(error);
         }
-        /*    try {
-         var query = "SELECT * FROM ?? WHERE ??=?";
-         var table = ["AllPurchasesInfos", "buyer", req.user.id];
-         query = mysql.format(query, table);
-         req.app.locals.connection.query(query, function(err, rows){
-         if (!err) {
-         if (rows.length == 0)
-         return next(req.app.getError(404, "User not found", null)); // <---- Should be modified
-         else
-         res.status(200).json({status: 200, message: "OK", data: {Users: rows}});
-         }
-         else
-         return next(req.app.getError(500, "Internal error width database", err));
-         });
-         }
-         catch (error) {
-         return next(error);
-         }*/
     }
 );
 
@@ -344,25 +242,7 @@ router.get("/:idUser/applications",
  */
 router.delete("/:idUser",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next) {
-        if (req.user.id == "" || req.user.id == undefined)
-            return next(req.app.getError(403, "Unauthorized : user needs to be logged.", null));
-        if (req.params.idUser == undefined || req.params.idUser == "") {
-            return next(req.app.getError(404, "Bad request, parameter missing.", null));
-        }
-        try {
-            Users.findOne({id: req.user.id}, function (err, user) {
-                if (err) return next(err);
-                else if (user == undefined || user == null) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else if (user.admin == true || user.id == req.params.idUser) next();
-                else return next(req.app.getError(403, "Unauthorized : user needs privileges.", null));
-            });
-        }
-        catch (error) {
-            return next(error);
-        }
-        next();
-    },
+    permissions(["admin", "me"]),
     function(req, res, next) {
         try {
             Users.findOneAndRemove({id: req.params.idUser}, function(err) {
@@ -376,31 +256,8 @@ router.delete("/:idUser",
         } catch (error) {
             return next(error);
         }
-        /*   try {
-         if (req.user.role == 'Administrator') {
-         var query = "DELETE FROM ?? WHERE ??=?";
-         var table = ["Users", "idUser", req.params.idUser];
-
-         query = mysql.format(query, table);
-         req.app.locals.connection.query(query, function(err, rows){
-         if (!err)
-         {
-         if (rows.affectedRows == 1)
-         res.status(200).json({status: 200, message: "OK", data: {}});
-         else
-         return next(req.app.getError(404, "User not found", null));
-         }
-         else
-         return next(req.app.getError(500, "Internal error width database", err));
-         });
-         } else {
-         return next(req.app.getError(403, "Forbidden : user needs privileges.", null));
-         }
-         }
-         catch (error) {
-         return next(error);
-         }*/
-    });
+    }
+);
 
 /**
  * @api {put} /users/:idUser Modifier un utilisateur
@@ -448,31 +305,13 @@ router.delete("/:idUser",
  */
 router.put("/:idUser",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next) {
-        if (req.user.id == "" || req.user.id == undefined)
-            return next(req.app.getError(403, "Unauthorized : user needs to be logged.", null));
-        if (req.params.idUser == undefined || req.params.idUser == "") {
-            return next(req.app.getError(404, "Bad request, parameter missing.", null));
-        }
+    permissions(["admin", "me"]),
+    function(req, res, next){
         for (var key in req.body) {
             if (req.body[key] == "" || req.body[key] == null || req.body[key] == undefined) {
                 return next(req.app.getError(404, "Bad request, parameters can't be null.", null));
             }
         }
-        try {
-            Users.findOne({id : req.user.id}, function(err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else if (user.admin == true || user.id == req.params.idUser) {
-                    return next(); // Accepte la requête si l'utilisateur est admin ou utilisateur à qui appartient le profil
-                }
-                else return next(req.app.getError(403, "Unauthorized : user needs privileges.", null));
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
-    function(req, res, next){
         try {
             Users.findOne({id: req.params.idUser}, function(err, userSearch) {
                 if (err) return next(err);
@@ -522,43 +361,7 @@ router.put("/:idUser",
         } catch (error) {
             return next(error);
         }
-        /*
-         try {
-         if (req.user.role == 'Administrator') {
-         var query = "SELECT * FROM ?? WHERE ??=?";
-         var table = ["Users", "idUser", req.params.idUser];
 
-         query = mysql.format(query, table);
-         req.app.locals.connection.query(query, function(err, rows){
-         if (!err)
-         {
-         if (rows == 0)
-         return next(req.app.getError(404, "User not found", null)); // <---- Should be modified
-         else
-         {
-         var query = "UPDATE Users SET `email`= ?,`pseudo`= ?, `password`= ?,`lastName`= ?,`firstName`= ?,`role`= ? WHERE `idUser` = ?";
-         var table = [req.body.email, req.body.pseudo, sha1(req.body.password), req.body.lastName, req.body.firstName, req.body.role, req.params.idUser];
-
-         query = mysql.format(query, table);
-         req.app.locals.connection.query(query, function(err, rows){
-         if (!err) {
-         res.status(200).json({status: 200, message: "OK", data: { Users : rows[0]}});
-         }
-         else
-         return next(req.app.getError(500, "Internal error width database", err));
-         });
-         }
-         }
-         else
-         return next(req.app.getError(500, "Internal error width database", err));
-         });
-         } else {
-         return next(req.app.getError(403, "Forbidden : user needs privileges.", null));
-         }
-         }
-         catch (error) {
-         return next(error);
-         }*/
     }
 );
 
@@ -596,13 +399,11 @@ router.put("/:idUser",
  *
  */ //// -------> Checked!!
 router.post("/",
-    function(req, res, next) {
+    permissions(["all"]),
+    function(req,res, next) {
         if (req.body.pseudo == undefined || req.body.email == undefined || req.body.password == undefined) {
             return next(req.app.getError(400, "Bad request: one or multiple field incorrect.", {}));
         }
-        next();
-    },
-    function(req,res, next) {
         try {
             var newUser = new Users();
             for (var key in req.body) {
@@ -657,25 +458,7 @@ router.post("/",
 */
 router.get("/:idUser/comments",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next) {
-        if (req.user.id == "" || req.user.id == undefined)
-            return next(req.app.getError(403, "Unauthorized : user needs to be logged.", null));
-        if (req.params.idUser == undefined || req.params.idUser == "") {
-            return next(req.app.getError(404, "Bad request, parameter missing.", null));
-        }
-        try {
-            Users.findOne({id : req.user.id}, function(err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else if (user.admin == true || user.id == req.params.idUser) {
-                    return next(); // Accepte la requête si l'utilisateur est admin ou utilisateur à qui appartient le profil
-                }
-                else return next(req.app.getError(403, "Unauthorized : user needs privileges.", null));
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
+    permissions(["admin", "me"]),
     function(req, res, next) {
         try {
             Comments.find({ author: req.params.idUser }).
@@ -698,31 +481,19 @@ router.get("/:idUser/comments",
     }
 );
 
-
 /*
  *  Permet de récupérer un commentaire posté sur une application par un utilisateur
  *  Authorization nécessaire : admin ou user correspondant à l'utilisateur demandé
  */
 router.get("/:idUser/comments/:idApp",
     expressjwt({secret: process.env.jwtSecretKey}),
+    permissions(["admin", "me"]),
     function(req, res, next) {
-        if (req.user.id == "" || req.user.id == undefined)
-            return next(req.app.getError(403, "Unauthorized : user needs to be logged.", null));
-        if (req.params.idUser == undefined || req.params.idUser == "") {
-            return next(req.app.getError(400, "Bad request : parameter missing.", null));
-        }
         try {
-            Users.findOne({id : req.user.id}, function(err, user) {
+            Applications.find({ id : req.params.idApp}, function(err, app) {
                 if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else if (user.admin == true || user.id == req.params.idUser) {
-                    Applications.find({ id : req.params.idApp}, function(err, app) {
-                        if (err) return next(err);
-                        else if (app == null || app == undefined) return next(req.app.getError(404, "Not found : application unknown."));
-                        else next();
-                    });
-                }
-                else return next(req.app.getError(403, "Unauthorized : user needs privileges.", null));
+                else if (app == null || app == undefined) return next(req.app.getError(404, "Not found : application unknown."));
+                else next();
             });
         } catch (error) {
             return next(error);
@@ -754,17 +525,7 @@ router.get("/:idUser/comments/:idApp",
 
 router.get('/:idUser/progressions/:idApp',
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next) {
-        try {
-            Users.findOne({id : req.user.id}, function(err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else next();
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
+    permissions("admin", "logged"),
     function(req, res, next) {
         try {
             Users.findOne({ id : req.user.id, progressions : { application: req.params.idApp }}, function(err, user) {
@@ -786,17 +547,7 @@ router.get('/:idUser/progressions/:idApp',
 
 router.get('/:idUser/progressions',
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next) {
-        try {
-            Users.findOne({id : req.user.id}, function(err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else next();
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
+    permissions("admin", "logged"),
     function(req, res, next) {
         try {
             Users.findOne({ id : req.user.id }, function(err, user) {

@@ -6,10 +6,11 @@ var express = require('express');
 var router = express.Router();
 var expressjwt = require('express-jwt');
 var Applications = require('../../models/applications');
-var Users = require('../../models/users');
 var Validation = require('../../models/validation');
 var Comments = require('../../models/comments');
+var permissions = require('../permissions');
 var ObjectId = require('mongoose').Types.ObjectId;
+
 /**
  * @api {get} /applications/ Liste des applications
  * @apiVersion 1.0.0
@@ -86,6 +87,7 @@ function depileApplications(applications, next) {
 }
 
 router.get("/",
+    permissions(["all"]),
     function(req, res, next) {
         Applications.find(function(err, applications) {
             if (err) return next();
@@ -142,7 +144,8 @@ router.get("/",
          catch (error) {
          return next(error);
          }*/
-    });
+    }
+);
 
 /* GET /applications/pending
  * Retourne la liste des applications en attente de validation
@@ -151,21 +154,7 @@ router.get("/",
  * */
 router.get("/pending",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next){
-        if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
-        try {
-            Users.findOne({id: req.user.id}, function (err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else {
-                    req.user.admin = user.admin;
-                    next();
-                }
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
+    permissions(["admin", "logged"]),
     function(req, res, next) {
         try {
             if (req.user.admin == true) {
@@ -221,26 +210,15 @@ router.get("/pending",
          } catch (error) {
          return next(error);
          }*/
-    });
+    }
+);
 
 /* POST /applications/pending/:idApp/validate
  * Publie une application en attente de validation
  * */
 router.post("/pending/:idApp/validate",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next){
-        if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
-        try {
-            Users.findOne({id: req.user.id}, function (err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else if (user.admin != true) return next(req.app.getError(403, "Unauthorized : needs admin privileges", null));
-                else next();
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
+    permissions(["admin"]),
     function(req, res, next) {
         try {
             Validation.findOne({id : req.params.idApp, type: 'application'}, function(err, application) {
@@ -274,21 +252,7 @@ router.post("/pending/:idApp/validate",
  * */
 router.delete("/pending/:idApp",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next){
-        if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
-        try {
-            Users.findOne({id: req.user.id}, function (err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else {
-                    req.user.admin = user.admin;
-                    next();
-                }
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
+    permissions(["admin", "logged"]),
     function(req, res, next) {
         try {
             Validation.findOne({ id : req.params.idApp }, function(err, app) {
@@ -322,19 +286,7 @@ router.delete("/pending/:idApp",
  * */
 router.get("/pending/:idApp",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next){
-        if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
-        try {
-            Users.findOne({id: req.user.id}, function (err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else if (user.admin != true) return next(req.app.getError(403, "Unauthorized : needs admin privileges", null));
-                else next();
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
+    permissions(["admin"]),
     function(req, res, next) {
         try {
             Validation.findOne({id : req.params.idApp, type: 'application'}, function(err, application) {
@@ -353,7 +305,6 @@ router.get("/pending/:idApp",
         }
     }
 );
-
 
 /**
  * @api {get} /applications/:idApplication Récupérer les informations d'une application
@@ -395,6 +346,7 @@ router.get("/pending/:idApp",
 *     }
  */
 router.get("/:idApplication",
+    permissions(["all"]),
     function(req, res, next) {
         Applications.find(function(err, applications) {
             if (err) return next();
@@ -440,7 +392,8 @@ router.get("/:idApplication",
          } catch (error) {
          return next(error);
          }*/
-    });
+    }
+);
 
 /**
  * @api {delete} /applications/:idApplication Supprimer une application
@@ -472,32 +425,18 @@ router.get("/:idApplication",
  */
 router.delete("/:idApplication",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next){
-        if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
-        try {
-            Users.findOne({id: req.user.id}, function (err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else {
-                    req.user.admin = user.admin;
-                    next();
-                }
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
+    permissions(["admin", "logged"]),
     function(req, res, next) {
         try {
-            Applications.findOne({ id : req.params.idApplication }, function(err, app) {
+            Applications.findOne({id: req.params.idApplication}, function (err, app) {
                 if (err) return next(err);
-                else if (req.user.admin == true || req.user.id == app.author) {
-                    app.remove(function(err) {
+                else if (req.user.admin == true || req.user.id == app.author) {
+                    app.remove(function (err) {
                         if (err) return next(err);
                         else res.status(200).json({
-                            status      : 200,
-                            message     : "Successfully deleted",
-                            data        : {}
+                            status: 200,
+                            message: "Successfully deleted",
+                            data: {}
                         });
                     });
                     return next();
@@ -509,27 +448,8 @@ router.delete("/:idApplication",
         } catch (error) {
             return next(error);
         }
-        /*    try {
-         var query = "DELETE FROM ?? WHERE ??=?";
-         var table = ["Applications", "idApplication", req.params.idApplication];
-
-         query = mysql.format(query, table);
-         req.app.locals.connection.query(query, function(err, rows){
-         if (!err)
-         {
-         if (rows.affectedRows == 1)
-         res.status(200).json({status: 200, message: "OK", data: {}});
-         else {
-         return next(req.app.getError(404, "Application not found", null));
-         }
-         }
-         else
-         return next(req.app.getError(500, "Internal error width database", err));
-         });
-         } catch (error) {
-         return next(error);
-         }*/
-    });
+    }
+);
 
 /**
  * @api {post} /applications/ Ajouter une application
@@ -568,8 +488,8 @@ router.delete("/:idApplication",
  */
 router.post("/",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next) {
-        if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
+    permissions(["admin", "Developer"]),
+    function(req,res, next) {
         if (req.body.name == undefined || req.body.name == "" ||
             req.body.description == undefined || req.body.description == "" ||
             req.body.price == undefined || req.body.price == "" ||
@@ -578,16 +498,6 @@ router.post("/",
             req.body.devices == undefined || req.body.devices == "" ||
             req.body.categories == undefined || req.body.categories == "")
             return next(req.app.getError(400, "Bad request : incorrect or missing parameters", null));
-        try {
-            Users.findOne({id: req.user.id}, function (err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else next();
-            });
-        } catch (error) {
-            return next(error);
-        }
-    }, function(req,res, next) {
         try {
             var newValidationApp = new Validation({
                 type            : "application",
@@ -633,7 +543,8 @@ router.post("/",
          } catch (error) {
          return next(error);
          }*/
-    });
+    }
+);
 
 /**
  * @api {get} /progressions/:idApplication Récupérer la progression
@@ -669,25 +580,6 @@ router.post("/",
  */
 router.get("/:idApplication/progressions", function(req, res, next) {
     return next(req.app.getError(404, "Request deprecated. See GET /api/users/:idUser/progressions", null));
-    /* try {
-     var query = "SELECT * FROM ?? WHERE ??=?";
-     var table = ["Progressions", "application", req.params.idApplication];
-
-     query = mysql.format(query, table);
-     req.app.locals.connection.query(query, function(err, rows){
-     if (!err)
-     {
-     if (rows.length == 0)
-     return next(req.app.getError(404, "Progression not found", null)); // <---- Should be modified
-     else
-     res.status(200).json({status: 200, message: "OK", data: {Progression: rows}});
-     }
-     else
-     return next(req.app.getError(500, "Internal error width database", err));
-     });
-     } catch (error) {
-     return next(error);
-     }*/
 });
 
 /**
@@ -722,20 +614,6 @@ router.get("/:idApplication/progressions", function(req, res, next) {
  */
 router.put("/:idApplication/progressions", function(req, res, next) {
     return next(req.app.getError(404, "Request deprecated. See GET /api/users/:idUser/progressions/:idApp", null));
-    /*    try {
-     var query = "UPDATE ?? SET ?? = ? WHERE ?? = ?";
-     var table = ["Progressions", "hashProgression" , req.body.hashProgression, "application", req.params.idApplication];
-
-     query = mysql.format(query, table);
-     req.app.locals.connection.query(query, function(err, rows){
-     if (!err)
-     res.status(200).json({status: 200, message: "OK", data: {}});
-     else
-     return next(req.app.getError(500, "Internal error width database", err));
-     });
-     } catch (error) {
-     return next(error);
-     }*/
 });
 
 /**
@@ -766,20 +644,6 @@ router.put("/:idApplication/progressions", function(req, res, next) {
  */
 router.post("/:idApplication/validateApplicationSubmission",function(req,res, next) {
     return next(req.app.getError(404, "Request deprecated. See GET /api/applications/pending/:idApp/validate", null));
-    /*    try {
-     var query = "UPDATE ?? SET ?? = ? WHERE ?? = ?";
-     var table = ["Applications","state","1","idApplication",req.params.idApplication];
-     query = mysql.format(query,table);
-     req.app.locals.connection.query(query,function(err,rows){
-     if(err) {
-     return next(req.app.getError(500, "Internal error width database", err));
-     } else {
-     res.status(200).json({status: 200, message: "OK", data: {}});
-     }
-     });
-     } catch (error) {
-     return next(error);
-     }*/
 });
 
 /**
@@ -818,43 +682,53 @@ router.post("/:idApplication/validateApplicationSubmission",function(req,res, ne
  */
 router.put("/:idApplication",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next) {
-        if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
-        for (var key in req.body)
-            if (req.body[key] == "")
-                return next(req.app.getError(400, "Bad request : cannot change a value with empty one", null));
-        try {
-            Users.findOne({id: req.user.id}, function (err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else next();
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
+    permissions(["admin", "Developer"]),
     function(req, res, next) {
         try {
-            Applications.findOne({ author : req.user.id}, function(err, res) {
-                if (err) return next(err);
-                else if (res == null || res == undefined) return next(req.app.getError(404, "Not found: please verify that application belongs to current user"));
-                else {
-                    for (var key in req.body) {
-                        if (res[key] != undefined)
-                            res[key] = req.body[key];
-                    }
-                    res.save(function(err) {
-                        if (err) return next(err);
-                        else res.status(200).json({
-                            status          : 200,
-                            message         : "OK",
-                            data            : {
-                                application : res
-                            }
+            if (req.user.admin == true) {
+                Applications.findOne({id: req.params.idApplication}, function(err, res) {
+                    if (err) return next(err);
+                    else if (res == null || res == undefined) return next(req.app.getError(404, "Not found: please verify that application really exist"));
+                    else {
+                        for (var key in req.body) {
+                            if (res[key] != undefined)
+                                res[key] = req.body[key];
+                        }
+                        res.save(function(err) {
+                            if (err) return next(err);
+                            else res.status(200).json({
+                                status          : 200,
+                                message         : "OK",
+                                data            : {
+                                    application : res
+                                }
+                            });
                         });
-                    });
-                }
-            })
+                    }
+                });
+            }
+            else {
+                Applications.findOne({id: req.params.idApplication, author : req.user.id}, function(err, res) {
+                    if (err) return next(err);
+                    else if (res == null || res == undefined) return next(req.app.getError(404, "Not found: please verify that application belongs to current user"));
+                    else {
+                        for (var key in req.body) {
+                            if (res[key] != undefined)
+                                res[key] = req.body[key];
+                        }
+                        res.save(function(err) {
+                            if (err) return next(err);
+                            else res.status(200).json({
+                                status          : 200,
+                                message         : "OK",
+                                data            : {
+                                    application : res
+                                }
+                            });
+                        });
+                    }
+                });
+            }
         } catch (error) {
             return next(error);
         }
@@ -878,8 +752,8 @@ router.put("/:idApplication",
          } catch (error) {
          return next(error);
          }*/
-    });
-
+    }
+);
 
 /**
  * @api {get} /:idApp/comments Liste des commentaires d'une application
@@ -924,6 +798,7 @@ router.put("/:idApplication",
  *
  */
 router.get("/:idApp/comments",
+    permissions(["all"]),
     function(req, res, next) {
         try {
             Applications.findOne({id : req.params.idApp}, function(err, app) {
@@ -935,7 +810,7 @@ router.get("/:idApp/comments",
             return next(error);
         }
     },
-    function(req,res, next){
+    function(req,res, next) {
         try {
             Comments.find({ application: req.params.idApp }).
             populate("author", "public").
@@ -1005,20 +880,13 @@ router.get("/:idApp/comments",
  */
 router.delete("/:idApp/comments/:idComment",
     expressjwt({secret: process.env.jwtSecretKey}),
+    permissions(["admin"]),
     function(req, res, next) {
-        if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
         try {
-            Users.findOne({id: req.user.id}, function (err, user) {
+            Applications.findOne({id: req.params.idApp}, function (err, app) {
                 if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else if (user.admin != true) return next(req.app.getError(403, "Unauthorized : require admin privileges", null));
-                else {
-                    Applications.findOne({id: req.params.idApp}, function (err, app) {
-                        if (err) return next(err);
-                        else if (app == null || app == undefined) return next(req.app.getError(404, "Not found : invalid application id", null));
-                        else next();
-                    });
-                }
+                else if (app == null || app == undefined) return next(req.app.getError(404, "Not found : invalid application id", null));
+                else next();
             });
         } catch (error) {
             return next(error);
@@ -1062,7 +930,6 @@ router.delete("/:idApp/comments/:idComment",
     }
 );
 
-
 /**
  * @api {post} /comments Publier un commentaire
  * @apiVersion 1.0.0
@@ -1098,34 +965,28 @@ router.delete("/:idApp/comments/:idComment",
  */
 router.post("/:idApp/comments",
     expressjwt({secret: process.env.jwtSecretKey}),
+    permissions(["logged"]),
     function(req, res, next) {
-        if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
-        if (req.body.title == undefined || req.body.title == "" ||
-            req.body.comment == undefined || req.body.comment == "")
-            return next(req.app.getError(404, "Bad request: one or multiple parameters missing.", null));
         try {
-            Users.findOne({id : req.user.id}, function(err, user) {
+            Applications.findOne({ id : req.params.idApp}, function(err, app) {
                 if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else  {
-                    Applications.findOne({ id : req.params.idApp}, function(err, app) {
+                else if (app == null || app == undefined) return next(req.app.getError(404, "Not found : invalid application id", null));
+                else {
+                    Comments.findOne({ author: req.user.id, application: req.params.idApp }, function(err, comment) {
                         if (err) return next(err);
-                        else if (app == null || app == undefined) return next(req.app.getError(404, "Not found : invalid application id", null));
-                        else {
-                            Comments.findOne({ author: req.user.id, application: req.params.idApp }, function(err, comment) {
-                                if (err) return next(err);
-                                else if (comment) return next(req.app.getError(409, "Conflict: user has already commented this app"), null);
-                                else next();
-                            })
-                        }
-                    });
+                        else if (comment) return next(req.app.getError(409, "Conflict: user has already commented this app"), null);
+                        else next();
+                    })
                 }
             });
         } catch (error) {
             return next(error);
         }
     },
-    function(req,res, next){
+    function(req,res, next) {
+        if (req.body.title == undefined || req.body.title == "" ||
+            req.body.comment == undefined || req.body.comment == "")
+            return next(req.app.getError(404, "Bad request: one or multiple parameters missing.", null));
         try {
             var newComment = new Comments({
                 title       : req.body.title,
@@ -1169,20 +1030,13 @@ router.post("/:idApp/comments",
 
 router.put("/:idApp/comments/:idComment",
     expressjwt({secret: process.env.jwtSecretKey}),
+    permissions(["admin", "logged"]),
     function(req, res, next) {
-        if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
         try {
-            Users.findOne({id: req.user.id}, function (err, user) {
+            Applications.findOne({id: req.params.idApp}, function (err, app) {
                 if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else {
-                    req.user.admin = user.admin;
-                    Applications.findOne({id: req.params.idApp}, function (err, app) {
-                        if (err) return next(err);
-                        else if (app == null || app == undefined) return next(req.app.getError(404, "Not found : invalid application id", null));
-                        else next();
-                    });
-                }
+                else if (app == null || app == undefined) return next(req.app.getError(404, "Not found : invalid application id", null));
+                else next();
             });
         } catch (error) {
             return next(error);
@@ -1236,21 +1090,7 @@ router.put("/:idApp/comments/:idComment",
 
 router.get('/:idApplication/payment',
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next) {
-        if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
-        try {
-            Users.findOne({id: req.user.id}, function (err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else {
-                    req.user.admin = user.admin;
-                    next();
-                }
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
+    permissions(["logged"]),
     function(req, res, next) {
         try {
             Applications.findOne({id: req.params.idApplication}, function (err, app) {
@@ -1275,7 +1115,9 @@ router.get('/:idApplication/payment',
     }
 );
 
-router.get('/:idApplication/payment/ExecutePayment', function(req, res, next) {
+router.get('/:idApplication/payment/ExecutePayment',
+    permissions(["all"]),
+    function(req, res, next) {
     if (req.query.success == true) {
         var paymentId = req.session.paymentId;
         var payerId = req.param('PayerID');
@@ -1292,12 +1134,11 @@ router.get('/:idApplication/payment/ExecutePayment', function(req, res, next) {
     else {
         console.log("failed");
     }
-});
+}
+);
 
 function createPayment(req, res, app, next) {
-
     var method = req.param('method');
-
     var payment = {
         "intent": "sale",
         "payer": {
@@ -1314,7 +1155,6 @@ function createPayment(req, res, app, next) {
             "description": "Buy application from BeaVR Store"
         }]
     };
-
 
     if (method === 'paypal') {
         payment.payer.payment_method = 'paypal';

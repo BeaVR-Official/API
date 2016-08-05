@@ -6,7 +6,7 @@ var express = require('express');
 var router = express.Router();
 var expressjwt = require('express-jwt');
 var Devices = require('../../models/devices');
-var Users = require('../../models/users');
+var permissions = require("../permissions");
 
 /**
  * @api {get} /devices/ Liste des devices
@@ -49,6 +49,7 @@ var Users = require('../../models/users');
  *
  */
 router.get("/",
+    permissions(["all"]),
     function(req, res, next) {
         try {
             Devices.find({}, function(err, devices) {
@@ -65,19 +66,6 @@ router.get("/",
         } catch (error) {
             return next(error);
         }
-        /*        try {
-         var query = "SELECT * FROM `Devices`";
-
-         req.app.locals.connection.query(query, function(err, rows){
-         if (!err)
-         res.status(200).json({status: 200, message: "OK", data: { Devices : rows}});
-         else
-         return next(req.app.getError(500, "Internal error width database", err));
-         });
-         }
-         catch (error) {
-         return next(error);
-         }*/
     }
 );
 
@@ -116,6 +104,7 @@ router.get("/",
  *
  */
 router.get("/:idDevice",
+    permissions(["all"]),
     function(req, res, next) {
         try {
             Devices.find({id: req.params.idDevice}, function(err, device) {
@@ -132,27 +121,6 @@ router.get("/:idDevice",
         } catch (error) {
             return (error);
         }
-        /* try {
-         var query = "SELECT * FROM Devices WHERE ??=?";
-         var table = ["idDevice", req.params.idDevice];
-
-
-         query = mysql.format(query, table);
-         req.app.locals.connection.query(query, function(err, rows){
-         if (!err)
-         {
-         if (rows.length == 0)
-         return next(req.app.getError(404, "Device not found", null));
-         else
-         res.status(200).json({status: 200, message: "OK", data: { Device : rows[0]}});
-         }
-         else
-         return next(req.app.getError(500, "Internal error width database", err));
-         });
-         }
-         catch (error) {
-         return next(error);
-         }*/
     }
 );
 
@@ -187,22 +155,7 @@ router.get("/:idDevice",
  */
 router.post("/",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next) {
-        if (req.user.id == "" || req.user.id == undefined)
-            return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
-        if (req.body["name"] == undefined || req.body["name"] == "") {
-            return next(req.app.getError(400, "Bad request : missing parameter name.", null));
-        }
-        try {
-            Users.findOne({id : req.user.id, admin : true}, function(err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
-                else next();
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
+    permissions(["admin"]),
     function(req, res, next){
         try {
             var device = new Devices({
@@ -256,19 +209,7 @@ router.post("/",
  */
 router.delete("/:idDevice",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next) {
-        if (req.user.id == "" || req.user.id == undefined)
-            return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
-        try {
-            Users.findOne({id : req.user.id, admin : true}, function(err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
-                else next();
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
+    permissions(["admin"]),
     function(req, res, next){
         try {
             Devices.findOneAndRemove({id: req.params.idDevice}, function(err) {
@@ -318,19 +259,7 @@ router.delete("/:idDevice",
  */
 router.put("/:idDevice",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next) {
-        if (req.user.id == "" || req.user.id == undefined)
-            return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
-        try {
-            Users.findOne({id : req.user.id, admin : true}, function(err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
-                else next();
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
+    permissions(["admin"]),
     function(req, res, next){
         try {
             Devices.findOne({id: req.params.idDevice}, function(err, device) {
@@ -352,16 +281,6 @@ router.put("/:idDevice",
                     });
                 }
             });
-            /*        var query = "UPDATE ?? SET ?? = ?, ?? = ? WHERE ?? = ?";
-             var table = ["Devices", "name", req.body.name, "image", req.body.image, "idDevice", req.params.idDevice];
-
-             query = mysql.format(query, table);
-             req.app.locals.connection.query(query, function(err, rows){
-             if (!err)
-             res.status(200).json({status: 200, message: "OK", data: {}});
-             else
-             return next(req.app.getError(500, "Internal error width database", err));
-             });*/
         }
         catch (error) {
             return next(error);

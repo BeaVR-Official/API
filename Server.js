@@ -75,7 +75,6 @@ app.getError = function(status,message, err) {
 };
 
 
-
 mongoose.connect('mongodb://127.0.0.1/beavr');
 
 app.set('mongoose', mongoose);

@@ -5,8 +5,8 @@
 var express = require('express');
 var router = express.Router();
 var expressjwt = require('express-jwt');
-var Users = require('../../models/users');
 var Categories = require('../../models/categories');
+var permissions = require('../permissions');
 
 /**
  * @api {get} /categoryTypes/ Liste des thèmes
@@ -48,19 +48,6 @@ var Categories = require('../../models/categories');
  */
 router.get("/categoryTypes", function(req, res, next) {
     return next(req.app.getError(404, "Request deleted. Report to GET /api/categories ", null));
-    /*    try {
-     var query = "SELECT * FROM `CategoryTypes`";
-
-     req.app.locals.connection.query(query, function(err, rows){
-     if (!err)
-     res.status(200).json({status: 200, message: "OK", data: {Categories:rows}});
-     else
-     return next(req.app.getError(500, "Internal error width database", err));
-     });
-     }
-     catch (error) {
-     return next(error);
-     }*/
 });
 
 /**
@@ -93,22 +80,6 @@ router.get("/categoryTypes", function(req, res, next) {
  */
 router.post("/categoryTypes", function(req,res, next){
     return next(req.app.getError(404, "Request deleted. Report to POST /api/categories ", null));
-    /*    try {
-     var query = "INSERT INTO `CategoryTypes` (`description`) VALUES (?)";
-     var table = [req.body.description];
-
-     query = mysql.format(query,table);
-
-     req.app.locals.connection.query(query,function(err,rows){
-     if (!err)
-     res.status(200).json({status: 200, message: "OK", data: {}});
-     else
-     return next(req.app.getError(500, "Internal error width database", err));
-     });
-     }
-     catch (error) {
-     return next(error);
-     }*/
 });
 
 /**
@@ -153,7 +124,9 @@ router.post("/categoryTypes", function(req,res, next){
     *     }
  *
  */
-router.get("/", function(req, res, next) {
+router.get("/",
+    permissions(["all"]),
+    function(req, res, next) {
     try {
         if (req.query["name"] != undefined && req.query.name != "")
             Categories.findOne({name: req.query.name}, function(err, category) {
@@ -184,25 +157,14 @@ router.get("/", function(req, res, next) {
     } catch (error) {
         return next(error);
     }
-    /*  try {
-     var query = "SELECT * FROM `Categories`";
+}
+);
 
-     req.app.locals.connection.query(query, function(err, rows){
-     if (!err)
-     res.status(200).json({status: 200, message: "OK", data: {Categories: rows}});
-     else
-     return next(req.app.getError(500, "Internal error width database", err));
-     });
-     }
-     catch (error) {
-     return next(error);
-     }*/
-});
-
-router.get("/:idCategory", function(req, res, next) {
+router.get("/:idCategory",
+    permissions("all"),
+    function(req, res, next) {
     try {
-        Categories.
-        findOne({ id : req.params.idCategory}, function(err, category) {
+        Categories.findOne({ id : req.params.idCategory}, function(err, category) {
             if (err) return next(err);
             else if (category == undefined || category == null)  return next(req.app.getError(404, "Not found : category unknown", null));
             else res.status(200).json({
@@ -216,27 +178,16 @@ router.get("/:idCategory", function(req, res, next) {
     } catch (error) {
         return next(error);
     }
-});
+}
+);
 
 router.put("/:idCategory",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next){
-        if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
+    permissions(["admin", "Developer"]),
+    function(req, res, next) {
         if (req.body.name == undefined || req.body.name == "" &&
             req.body.description == undefined || req.body.description == "")
             return next(req.app.getError(400, "Bad request: one or multiple parameters missing.", null));
-        try {
-            Users.findOne({id: req.user.id}, function (err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else if (user.admin != true) return next(req.app.getError(403, "Unauthorized : needs admin privileges", null));
-                else next();
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
-    function(req, res, next) {
         try {
             Categories.findOne({ id : req.params.idCategory }, function(err, category) {
                 if (err) return next(err);
@@ -266,23 +217,11 @@ router.put("/:idCategory",
 
 router.post("/",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next){
-        if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
+    permissions(["admin", "Developer"]),
+    function(req, res, next) {
         if (req.body.name == undefined || req.body.name == "" ||
             req.body.description == undefined || req.body.description == "")
             return next(req.app.getError(400, "Bad request: one or multiple parameters missing.", null));
-        try {
-            Users.findOne({id: req.user.id}, function (err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Unauthorized : invalid token", null));
-                else if (user.admin != true) return next(req.app.getError(403, "Unauthorized : needs admin privileges", null));
-                else next();
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
-    function(req, res, next) {
         try {
             var newCategory = Categories({
                 name        : req.body.name,
@@ -352,25 +291,6 @@ router.post("/",
  */
 router.get("/:idType", function(req, res, next) {
     return next(req.app.getError(404, "Request deleted.", null));
-    /*  try {
-     var query = "SELECT * FROM `Categories` WHERE ??=?";
-     var table = ["type", req.params.idType];
-     query = mysql.format(query, table);
-     req.app.locals.connection.query(query, function(err, rows){
-     if (!err)
-     {
-     if (rows.length == 0)
-     return next(req.app.getError(404, "Category not found", null)); // <---- Should be modified
-     else
-     res.status(200).json({status: 200, message: "OK", data: {Categories: rows}});
-     }
-     else
-     return next(req.app.getError(500, "Internal error width database", err));
-     });
-     }
-     catch (error) {
-     return next(error);
-     }*/
 });
 
 /**
@@ -407,19 +327,6 @@ router.get("/:idType", function(req, res, next) {
  */
 router.get("/categorytypesanddevices", function(req, res, next) {
     return next(req.app.getError(404, "Request deleted. Report to GET /api/categories && GET /api/devices", null));
-    /*    try {
-            var query = "SELECT * FROM `AllCategoryTypesAndDevices`";
-
-            req.app.locals.connection.query(query, function(err, rows){
-                if (!err)
-                    res.status(200).json({status: 200, message: "OK", data: {CategoryTypesAndDevices: rows[0]}});
-                else
-                    return next(req.app.getError(500, "Internal error width database", err));
-            });
-        }
-        catch (error) {
-            return next(error);
-        }*/
 });
 
 module.exports = router;

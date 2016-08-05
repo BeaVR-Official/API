@@ -123,24 +123,6 @@ router.get("/:idApp/:limit",function(req,res, next) {
  */
 router.post("/hasCommented", function(req,res, next){
     return next(req.app.getError(404, "Request deprecated. See GET /api/users/:idUser/comments/:idApp", null));
-    /* try {
-     var query = "SELECT * FROM ?? WHERE ??=? AND ??=?";
-     var table = ["Comments","application",req.body.idApplication,"author",req.body.idAuthor];
-     query = mysql.format(query,table);
-     req.app.locals.connection.query(query,function(err,rows){
-     if(err) {
-     return next(req.app.getError(500, "Internal error width database", err));
-     } else {
-     if (rows.length == 0)
-     return next(req.app.getError(404, "Entity not found", null)); // <----- Should be modified
-     else
-     res.status(200).json({status: 200, message: "OK", data: {Comments: rows}});
-     }
-     });
-     }
-     catch (error) {
-     return next(error);
-     }*/
 });
 
 /**
@@ -173,21 +155,6 @@ router.post("/hasCommented", function(req,res, next){
  */
 router.delete("/:idApp/:idComment", function(req,res, next) {
     return next(req.app.getError(404, "Request deprecated. See DELETE /api/applications/:idApp/comments/:idComment", null));
-    /*    try {
-     var query = "DELETE from ?? WHERE ??=?";
-     var table = ["Comments","idComment",req.params.idComment];
-     query = mysql.format(query,table);
-     req.app.locals.connection.query(query,function(err,rows){
-     if(err) {
-     return next(req.app.getError(500, "Internal error width database", err));
-     } else {
-     res.status(200).json({status: 200, message: "OK", data: {}});
-     }
-     });
-     }
-     catch (error) {
-     return next(error);
-     }*/
 });
 
 module.exports = router;

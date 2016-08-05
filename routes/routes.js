@@ -22,6 +22,7 @@ var expressjwt = require('express-jwt');
 var Users = require('../models/users');
 var CryptoJS = require('crypto-js');
 var Feedbacks = require("../models/feedback");
+var permissions = require("./permissions");
 
 /**
  * @api {get} / Réponse basique
@@ -39,7 +40,9 @@ var Feedbacks = require("../models/feedback");
   *       "Code" : 1
   *     }
  */
-router.get("/", function(req, res, next){
+router.get("/",
+    permissions(["all"]),
+    function(req, res, next){
     try {
         res.status(200).json({
             status  : 200,
@@ -48,7 +51,8 @@ router.get("/", function(req, res, next){
     }  catch (error) {
         return next(error);
     }
-});
+}
+);
 
 /**
  * @api {post} /registration Inscription
@@ -80,9 +84,11 @@ router.get("/", function(req, res, next){
   *     }
  *
  */  // -------> Checked!!
-router.post("/registration", function(req,res, next) {
+router.post("/registration",
+    function(req,res, next) {
     return next(req.app.getError(404, "Request deprecated. See POST /api/users", {}));
-});
+}
+);
 
 /**
  * @api {post} /connection Connexion
@@ -125,6 +131,7 @@ router.post("/registration", function(req,res, next) {
  *
  */ // -------> Checked!!
 router.post("/connection",
+    permissions(["all"]),
     function(req, res, next) {
         if (req.body.email == undefined || req.body.password == undefined) {
             return next(req.app.getError(400, "One or multiple field incorrect.", {}));
@@ -205,6 +212,7 @@ router.post("/connection",
 );
 
 router.get('/validateToken',
+    permissions(["all"]),
     function(req, res, next) {
         if (req.headers.authorization == "null")
             return res.status(200).json({
@@ -272,34 +280,11 @@ router.get('/validateToken',
   *     }
  *
  */
-router.post("/email", function(req,res, next){
+router.post("/email",
+    function(req,res, next){
     return next(req.app.getError(404, "Request deprecated."), null);
-    /*    if (req.body.email == undefined) {
-     return next(req.app.getError(400, "Bad request, missing required parameter.", null));
-     }
-
-     var query = "SELECT * FROM ?? WHERE ?? = ?";
-     var table = ["Users", "email", req.body.email];
-
-     try {
-     query = mysql.format(query, table);
-
-     req.app.locals.connection.query(query, function(err, rows) {
-     if (!err)
-     {
-     if (rows == 0)
-     return next(req.app.getError(404, "Entity not found.", null)); // <---- Should be modified
-     else
-     res.status(200).json({status : 200, message : "Entity found.", data: { } });
-     }
-     else
-     return next(req.app.getError(500, "Error width database", err));
-     });
-     }
-     catch (error) {
-     return next(error);
-     }*/
-});
+}
+);
 
 /**
  * @api {post} /reset-password Réinitialiser le mot de passe
@@ -330,6 +315,7 @@ router.post("/email", function(req,res, next){
  *
  */
 router.post("/reset-password",
+    permissions(["all"]),
     function(req, res, next) {
         if (req.body.email == undefined) {
             return next(req.app.getError(400, "Bad request, missing required parameter.", null));
@@ -422,7 +408,8 @@ router.post("/reset-password",
          catch (error) {
          return next(error);
          }*/
-    });
+    }
+);
 
 /**
  * @api {post} /sendFeedback Effectuer un retour sur le Store
@@ -457,22 +444,10 @@ router.post("/reset-password",
  */
 router.post("/feedbacks",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next) {
-        if (req.user.id == "" || req.user.id == undefined)
-            return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
+    permissions(["logged"]),
+    function(req,res, next) {
         if (req.body.object == undefined || req.body.description == undefined)
             return next(req.app.getError(400, "Bad request, missing required parameter.", null));
-        try {
-            Users.findOne({id: req.user.id}, function(err, user) {
-                if (err) return next(error);
-                else if (user == undefined || user == null) return next(req.app.getError(403, "Forbidden: invalid token."));
-                else next();
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
-    function(req,res, next) {
         try {
             var newFeedback = new Feedbacks({
                 user        : req.user.id,
@@ -491,23 +466,8 @@ router.post("/feedbacks",
         } catch (error) {
             return next(error);
         }
-        /*    var query = "INSERT INTO ??(??,??,??,??) VALUES (?,?,?,?)";
-         var table = ["Feedbacks","user","object","description","recontact",req.body.idUser,req.body.object,req.body.description,req.body.recontact];
-
-         try {
-         query = mysql.format(query,table);
-         req.app.locals.connection.query(query,function(err,rows){
-         if(err) {
-         return next(req.app.getError(500, "Internal error width database", err));
-         } else {
-         res.status(200).json({status : 200, message : "Feedback successfully sent.", data: {}});
-         }
-         });
-         }
-         catch (error) {
-         return next(error);
-         }*/
-    });
+    }
+);
 
 /**
  * @api {get} /getFeedbacks Récupérer la liste des retours sur le Store
@@ -549,19 +509,7 @@ router.post("/feedbacks",
  */
 router.get("/feedbacks",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next) {
-        if (req.user.id == "" || req.user.id == undefined)
-            return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
-        try {
-            Users.findOne({id: req.user.id, admin: true}, function (err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
-                else next();
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
+    permissions(["admin"]),
     function(req,res, next){
         try {
             Feedbacks.find(function (err, feedbacks) {
@@ -583,23 +531,6 @@ router.get("/feedbacks",
         } catch (error) {
             return next(error);
         }
-        /*
-
-         var query = "SELECT * FROM ??";
-         var table = ["Feedbacks"];
-         try {
-         query = mysql.format(query,table);
-         req.app.locals.connection.query(query,function(err,rows){
-         if(err) {
-         return next(req.app.getError(500, "Internal error width database", err));
-         } else {
-         res.status(200).json({status : 200, message : "OK", data: { Feedbacks: rows }});
-         }
-         });
-         }
-         catch (error) {
-         return next(error);
-         }*/
     }
 );
 
@@ -637,22 +568,9 @@ router.get("/feedbacks",
   *     }
  *
  */
-
 router.get("/dashboardInfos",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next) {
-        if (req.user.id == "" || req.user.id == undefined)
-            return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
-        try {
-            Users.findOne({id: req.user.id, admin: true}, function (err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
-                else next();
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
+    permissions(["admin"]),
     function(req, res, next){
         try {
             req.app.get('mongoose').connection.db.listCollections().toArray(function(err, names) {
@@ -679,26 +597,6 @@ router.get("/dashboardInfos",
         } catch (error) {
             return next(error);
         }
-        /*
-         try {
-         if (req.user.role == 'Administrator') {
-         var query = "SELECT * FROM ??";
-         var table = ["AllDashboardInfos"];
-         query = mysql.format(query,table);
-         req.app.locals.connection.query(query,function(err,rows) {
-         if (err) {
-         return next(req.app.getError(500, "Internal error width database", err));
-         } else {
-         res.status(200).json({status : 200, message : "OK", data: { DashboardInfos: rows[0] }});
-         }
-         });
-         } else {
-         return next(req.app.getError(401, "User needs privileges.", null));
-         }
-         }
-         catch (error) {
-         return next(error);
-         }*/
     }
 );
 

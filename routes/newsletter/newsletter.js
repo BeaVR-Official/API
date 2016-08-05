@@ -5,27 +5,12 @@
 var express = require('express');
 var router = express.Router();
 var expressjwt = require('express-jwt');
-var Users = require('../../models/users');
 var Followers = require('../../models/followers');
+var permissions = require("../permissions");
 
 router.get("/followers",
     expressjwt({secret: process.env.jwtSecretKey}),
-    function(req, res, next) {
-        if (req.user.id == "" || req.user.id == undefined)
-            return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
-        if (req.body["name"] == undefined || req.body["name"] == "") {
-            return next(req.app.getError(400, "Bad request : missing parameter name.", null));
-        }
-        try {
-            Users.findOne({id : req.user.id, admin : true}, function(err, user) {
-                if (err) return next(err);
-                else if (user == null || user == undefined) return next(req.app.getError(403, "Forbidden : user needs admin privileges.", null));
-                else next();
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
+    permissions(["admin"]),
     function(req, res, next) {
         try{
             Followers.find(function(err, res) {
@@ -51,6 +36,7 @@ function validateEmail(email) {
 }
 
 router.post("/followers",
+    permissions(["all"]),
     function(req, res, next) {
         if (req.body == undefined || req.body['email'] == undefined || req.body['email'] == null || !validateEmail(req.body['email']))
             return next(req.app.getError(400, 'Bad request. Missing or malformed email.', null));
@@ -81,9 +67,11 @@ router.post("/followers",
         } catch (error) {
             return next(error);
         }
-    });
+    }
+);
 
-router.delete("/followers:id", function(req, res, next) {
+router.delete("/followers:id",
+    function(req, res, next) {
     try {
         Followers.findOneAndRemove({id: req.params.id}, function(err) {
             if (err) return next(err);
@@ -96,6 +84,7 @@ router.delete("/followers:id", function(req, res, next) {
     } catch (error) {
         return next(error);
     }
-});
+}
+);
 
 module.exports = router;
