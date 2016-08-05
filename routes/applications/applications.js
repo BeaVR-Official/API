@@ -67,23 +67,21 @@ function depileApplications(applications, next) {
             }
         ],
         function (err, result) {
-                Applications.findOne({id: (result.length > 0) ? result[0]._id : 0 }, function (err, res) {
-                    if (res != null && res != undefined) {
-                        res.noteAvg = result[0].average;
-                        res.commentsNb = result[0].count;
-                        res.save().then(function () {
-                            applications.pop();
-                            console.log("save");
-                            depileApplications(applications, next);
-                        })
-                    }
-                    else {
-                        console.log("save");
+            Applications.findOne({id: (result.length > 0) ? result[0]._id : 0 }, function (err, res) {
+                if (res != null && res != undefined) {
+                    res.noteAvg = result[0].average;
+                    res.commentsNb = result[0].count;
+                    res.save().then(function () {
                         applications.pop();
                         depileApplications(applications, next);
-                    }
-                });
-            }
+                    })
+                }
+                else {
+                    applications.pop();
+                    depileApplications(applications, next);
+                }
+            });
+        }
     );
 }
 
@@ -114,10 +112,9 @@ router.get("/",
                         query[key] = req.query[key];
                 }
             }
-            Applications.find(query, function(err, applications) {
+            Applications.find(query).populate("author", "public").exec(function(err, applications) {
                 if (err) return next(err);
                 else {
-                    console.log("send");
                     return res.status(200).json({
                         status: 200,
                         message: "OK",
@@ -408,42 +405,42 @@ router.get("/:idApplication",
         });
     },
     function(req, res, next) {
-    try {
-        Applications.findOne({ id : req.params.idApplication }, function(err, app) {
-            if (err) return next(err);
-            else if (app == undefined || app == null) return next(req.app.getError(404, "Not found : application not found", null));
-            else res.status(200).json({
-                    status          : 200,
-                    message         : "OK",
-                    data            : {
-                        application : app
-                    }
-                });
-        });
-    } catch (error) {
-        return next(error);
-    }
-    /* try {
-     var query = "SELECT * FROM `AllApplicationsInfos` WHERE ??=?";
-     var table = ["id", req.params.idApplication];
+        try {
+            Applications.findOne({ id : req.params.idApplication }).populate("author", "public").exec(function(err, app) {
+                if (err) return next(err);
+                else if (app == undefined || app == null) return next(req.app.getError(404, "Not found : application not found", null));
+                else res.status(200).json({
+                        status          : 200,
+                        message         : "OK",
+                        data            : {
+                            application : app
+                        }
+                    });
+            });
+        } catch (error) {
+            return next(error);
+        }
+        /* try {
+         var query = "SELECT * FROM `AllApplicationsInfos` WHERE ??=?";
+         var table = ["id", req.params.idApplication];
 
-     query = mysql.format(query, table);
-     req.app.locals.connection.query(query, function(err, rows){
-     if (!err)
-     {
-     if (rows.length == 0)
-     return next(req.app.getError(404, "Application not found", null));
-     else {
-     res.status(200).json({status: 200, message: "OK", data: {Applications: rows[0]}});
-     }
-     }
-     else
-     return next(req.app.getError(500, "Internal error width database", err));
-     });
-     } catch (error) {
-     return next(error);
-     }*/
-});
+         query = mysql.format(query, table);
+         req.app.locals.connection.query(query, function(err, rows){
+         if (!err)
+         {
+         if (rows.length == 0)
+         return next(req.app.getError(404, "Application not found", null));
+         else {
+         res.status(200).json({status: 200, message: "OK", data: {Applications: rows[0]}});
+         }
+         }
+         else
+         return next(req.app.getError(500, "Internal error width database", err));
+         });
+         } catch (error) {
+         return next(error);
+         }*/
+    });
 
 /**
  * @api {delete} /applications/:idApplication Supprimer une application
@@ -576,7 +573,7 @@ router.post("/",
         if (req.body.name == undefined || req.body.name == "" ||
             req.body.description == undefined || req.body.description == "" ||
             req.body.price == undefined || req.body.price == "" ||
-            req.body.logo == undefined || req.body.logo.length <= 0 ||
+            req.body.logo == undefined || req.body.logo.length != "" ||
             req.body.url == undefined || req.body.url == "" ||
             req.body.devices == undefined || req.body.devices == "" ||
             req.body.categories == undefined || req.body.categories == "")
@@ -598,6 +595,7 @@ router.post("/",
                     name            : req.body.name,
                     description     : req.body.description,
                     logo            : req.body.logo,
+                    screenshots     : (req.body["screenshots"] != undefined) ? req.body.screenshots : [],
                     url             : req.body.url,
                     categoriesName  : req.body.categories,
                     devicesNames    : req.body.devices,
@@ -1173,9 +1171,6 @@ router.put("/:idApp/comments/:idComment",
     expressjwt({secret: process.env.jwtSecretKey}),
     function(req, res, next) {
         if (req.user.id == null || req.user.id == undefined) return next(req.app.getError(403, "Forbidden : user needs to be logged.", null));
-        if ((req.body.title != undefined && req.body.title == "") ||
-            (req.body.comment != undefined && req.body.comment == ""))
-            return next(req.app.getError(404, "Bad request: one or multiple parameters missing.", null));
         try {
             Users.findOne({id: req.user.id}, function (err, user) {
                 if (err) return next(err);
@@ -1201,16 +1196,18 @@ router.put("/:idApp/comments/:idComment",
                 else {
                     if (comment.author == req.user.id || req.user.admin == true) {
                         for (var key in req.body) {
-                            if (comment[key] != undefined)
+                            if (comment[key] != undefined && key != "_id" && key != "id" && req.body[key] != "")
                                 comment[key] = req.body[key];
                         }
                         comment.save(function(err) {
                             if (err) return next(err);
-                            else res.status(200).json({
-                                status       : 200,
-                                message      : "Comment successfully modified",
-                                data         : {}
-                            });
+                            else {
+                                res.status(200).json({
+                                    status       : 200,
+                                    message      : "Comment successfully modified",
+                                    data         : {}
+                                });
+                            }
                         });
                     }
                 }

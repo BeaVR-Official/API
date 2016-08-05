@@ -11,12 +11,13 @@ var feedbackSchema = new Schema({
     user        : { type: ObjectId, required: true, ref : 'users' },
     object      : { type: String, required: true },
     description : { type: String, required: true},
+    recontact   : { type: Boolean, default: false},
     created_at  : Date,
     updated_at  : Date
 
 });
 
-feedbackSchema.pre('save', true, function(next) {
+feedbackSchema.pre('save', function(next) {
     var currentDate = new Date();
     this.id = this._id.toHexString();
     this.updated_at = currentDate;

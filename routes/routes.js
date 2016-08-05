@@ -455,7 +455,7 @@ router.post("/reset-password",
   *     }
  *
  */
-router.post("/sendFeedback",
+router.post("/feedbacks",
     expressjwt({secret: process.env.jwtSecretKey}),
     function(req, res, next) {
         if (req.user.id == "" || req.user.id == undefined)
@@ -477,6 +477,7 @@ router.post("/sendFeedback",
             var newFeedback = new Feedbacks({
                 user        : req.user.id,
                 object      : req.body.object,
+                recontact   : (req.body["recontact"] != undefined) ? req.body.recontact : false,
                 description : req.body.description
             });
             newFeedback.save(function(err) {
@@ -546,7 +547,7 @@ router.post("/sendFeedback",
   *     }
  *
  */
-router.get("/getFeedbacks",
+router.get("/feedbacks",
     expressjwt({secret: process.env.jwtSecretKey}),
     function(req, res, next) {
         if (req.user.id == "" || req.user.id == undefined)

@@ -18,7 +18,7 @@ var commentsSchema = new Schema({
     updated_at      : Date
 });
 
-commentsSchema.pre('save', true, function(next, done) {
+commentsSchema.pre('save', function(next) {
     var currentDate = new Date();
     this.updated_at = currentDate;
     if (!this.created_at) {
@@ -29,7 +29,7 @@ commentsSchema.pre('save', true, function(next, done) {
         var error = new Error();
         error.message = "Title field cannot be empty.";
         error.status = 400;
-        done(error);
+        next(error);
     }
     next();
 });
