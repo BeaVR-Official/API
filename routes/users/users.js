@@ -7,7 +7,7 @@ var router = express.Router();
 var jwt = require('jsonwebtoken');
 var expressjwt = require('express-jwt');
 var CryptoJS = require('crypto-js');
-var io = require('socket.io-client');
+var fs  = require('fs');
 var shortid = require('shortid');
 var Users = require('../../models/users');
 var Comments = require('../../models/comments');
@@ -197,14 +197,14 @@ router.get("/:idUser/applications",
                 if (err) return next(err);
                 else if (searchUser == undefined || searchUser == null) return next(req.app.getError(404, "User not found", null));
                 else  res.status(200).json({
-                            status          : 200,
-                            message         : "OK",
-                            data            : {
-                                count       : searchUser.applications.length,
-                                applications: searchUser.applications
-                            }
-                        });
+                        status          : 200,
+                        message         : "OK",
+                        data            : {
+                            count       : searchUser.applications.length,
+                            applications: searchUser.applications
+                        }
                     });
+            });
         }
         catch (error) {
             return next(error);
@@ -325,18 +325,29 @@ router.put("/:idUser",
                                 if (user.admin == true)
                                     userSearch[key] = req.body[key];
                             }
-                            else if (key == "userImg") {
-                                var socket = io.connect(process.env.dataServer, {reconnect: true});
-                                console.log(req.body);
-                                var filename = shortid.generate() + "." + req.body.userImg.filename.split('.').pop();
-                                console.log(filename);
-                                socket.on( 'connect', function() {
-                                    socket.emit('downloadImage', { image: true, name: filename, buffer: req.body.userImg.buffer });
-                                    return socket.on('downloadSucceed', function(data) {
-                                        userSearch.picture = data.path;
-                                        socket.disconnect();
-                                        return;
-                                    });
+                            else if (key == "picture" && req.body["picture"].buffer != undefined && req.body["picture"].filename != undefined) {
+
+                                var filename = shortid.generate() + "." + req.body.picture.filename.split('.').pop();
+                                var buff = new Buffer(req.body.picture.buffer
+                                    .replace(/^data:image\/(png|gif|jpeg);base64,/,''), 'base64');
+                                var path = "http://beavr.fr:3000/api/uploads/";
+                                fs.writeFile('/home/API/uploads/' + filename, buff, function(err) {
+                                    console.log(err);
+                                    if(!err){
+                                        var old = userSearch.picture.substring(path.length, userSearch.picture.length);
+                                        console.log(old);
+                                        fs.exists('/home/API/uploads/' + old, function(exists) {
+                                            if(exists) {
+                                                fs.unlink('/home/API/uploads/' + old);
+                                            }
+                                        });
+                                        userSearch.picture = "http://beavr.fr:3000/api/uploads/" + filename;
+                                        userSearch.public.picture = "http://beavr.fr:3000/api/uploads/" + filename;
+                                    }
+                                    else {
+                                        userSearch.picture = "http://www.outsystems.com/PortalTheme/img/UserImage.png?23465";
+                                        userSearch.public.picture = "http://www.outsystems.com/PortalTheme/img/UserImage.png?23465";
+                                    }
                                 });
                             }
                             else {
@@ -361,7 +372,6 @@ router.put("/:idUser",
         } catch (error) {
             return next(error);
         }
-
     }
 );
 
@@ -452,10 +462,10 @@ router.post("/",
 );
 
 /*
-*  Permet de récupérer tous les commentaires d'un utilisateur
-*  Authorization nécessaire : admin ou user correspondant à l'utilisateur demandé
-*  Query acceptés : order=[ASC|DESC] & limit=[int]
-*/
+ *  Permet de récupérer tous les commentaires d'un utilisateur
+ *  Authorization nécessaire : admin ou user correspondant à l'utilisateur demandé
+ *  Query acceptés : order=[ASC|DESC] & limit=[int]
+ */
 router.get("/:idUser/comments",
     expressjwt({secret: process.env.jwtSecretKey}),
     permissions(["admin", "me"]),
@@ -505,12 +515,12 @@ router.get("/:idUser/comments/:idApp",
                 if (err) return next(err);
                 else
                     res.status(200).json({
-                    status          : 200,
-                    message         : "OK",
-                    data            : (comment == null || comment == undefined) ? {} : {
-                        comment     : comment
-                    }
-                })
+                        status          : 200,
+                        message         : "OK",
+                        data            : (comment == null || comment == undefined) ? {} : {
+                            comment     : comment
+                        }
+                    })
             });
         } catch (error) {
             return next(error);
@@ -520,8 +530,8 @@ router.get("/:idUser/comments/:idApp",
 
 
 /* GET /:idUser/progressions/:idApp
-* Récupérer la progression d'un utilisateur sur une application
-* */
+ * Récupérer la progression d'un utilisateur sur une application
+ * */
 
 router.get('/:idUser/progressions/:idApp',
     expressjwt({secret: process.env.jwtSecretKey}),

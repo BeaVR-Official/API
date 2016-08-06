@@ -358,7 +358,7 @@ router.get("/:idApplication",
     },
     function(req, res, next) {
         try {
-            Applications.findOne({ id : req.params.idApplication }).populate("author", "public").exec(function(err, app) {
+            Applications.findOne({ _id : new ObjectId(req.params.idApplication) }).populate("author", "public").exec(function(err, app) {
                 if (err) return next(err);
                 else if (app == undefined || app == null) return next(req.app.getError(404, "Not found : application not found", null));
                 else res.status(200).json({
@@ -372,26 +372,6 @@ router.get("/:idApplication",
         } catch (error) {
             return next(error);
         }
-        /* try {
-         var query = "SELECT * FROM `AllApplicationsInfos` WHERE ??=?";
-         var table = ["id", req.params.idApplication];
-
-         query = mysql.format(query, table);
-         req.app.locals.connection.query(query, function(err, rows){
-         if (!err)
-         {
-         if (rows.length == 0)
-         return next(req.app.getError(404, "Application not found", null));
-         else {
-         res.status(200).json({status: 200, message: "OK", data: {Applications: rows[0]}});
-         }
-         }
-         else
-         return next(req.app.getError(500, "Internal error width database", err));
-         });
-         } catch (error) {
-         return next(error);
-         }*/
     }
 );
 
@@ -801,7 +781,7 @@ router.get("/:idApp/comments",
     permissions(["all"]),
     function(req, res, next) {
         try {
-            Applications.findOne({id : req.params.idApp}, function(err, app) {
+            Applications.findOne({_id : new ObjectId(req.params.idApp)}, function(err, app) {
                 if (err) return next(err);
                 else if (app == null || app == undefined) return next(req.app.getError(404, "Not found: application unknown", null));
                 else next();
@@ -812,7 +792,7 @@ router.get("/:idApp/comments",
     },
     function(req,res, next) {
         try {
-            Comments.find({ application: req.params.idApp }).
+            Comments.find({ application: new ObjectId(req.params.idApp) }).
             populate("author", "public").
             sort({created_at: (req.query["order"] && req.query["order"] == "ASC") ? 1 : -1}).
             limit((req.query["limit"] && isNaN(parseInt(req.query["limit"])) == false) ? parseInt(req.query["limit"]) : 999).
@@ -831,22 +811,6 @@ router.get("/:idApp/comments",
         } catch(error) {
             return next(error);
         }
-        /*        try {
-         var query = "SELECT * FROM `AllCommentsInfos` WHERE ??=? ORDER BY date DESC";
-         var table = ["application",req.params.idApp];
-
-         query = mysql.format(query,table);
-         req.app.locals.connection.query(query,function(err,rows){
-         if(err) {
-         return next(req.app.getError(500, "Internal error width database", err));
-         } else {
-         res.status(200).json({status: 200, message: "OK", data: {Comments: rows}});
-         }
-         });
-         }
-         catch (error) {
-         return next(error);
-         }*/
     }
 );
 
@@ -992,6 +956,7 @@ router.post("/:idApp/comments",
                 title       : req.body.title,
                 comment     : req.body.comment,
                 rating      : req.body.rating,
+                author      : ObjectId(req.user.id),
                 application : ObjectId(req.params.idApp)
             });
 
@@ -1008,23 +973,6 @@ router.post("/:idApp/comments",
         } catch (error) {
             return next(error);
         }
-        /*    try {
-         var query = "INSERT INTO ??(??,??,??,??,??,??) VALUES (?,?,?,?,?,?)";
-         var table = ["Comments","title", "comment","rating","author","application","date",
-         req.body.title, req.body.comment, req.body.rating, req.body.author, req.body.application,
-         (new Date ((new Date((new Date(new Date())).toISOString() )).getTime() - ((new Date()).getTimezoneOffset()*60000))).toISOString().slice(0, 19).replace('T', ' ')];
-         query = mysql.format(query,table);
-         req.app.locals.connection.query(query,function(err,rows){
-         if(err) {
-         return next(req.app.getError(500, "Internal error width database", err));
-         } else {
-         res.status(200).json({status: 200, message: "OK", data: {}});
-         }
-         });
-         }
-         catch (error) {
-         return next(error);
-         }*/
     }
 );
 

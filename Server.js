@@ -10,7 +10,7 @@ process.env.mailPort = 465;
 process.env.mailUser = 'contact@beavr.fr';
 process.env.jwtSecretKey = 'XSVgtQ\;>1!\,z`\,xDA*zMzs|#\$Iku-`P(l9p.u/1IO][#wKs\cXS\ElxM~P{pw4J';
 process.env.NODE_ENV = "debug";
-process.env.dataServer = "http://5.196.88.52:5001/";
+process.env.dataServer = "http://127.0.0.1:5001/";
 
 fs.readdirSync(__dirname + '/models').forEach(function(filename) {
  if (~filename.indexOf('.js')) require(__dirname + '/models/' + filename);
@@ -18,6 +18,8 @@ fs.readdirSync(__dirname + '/models').forEach(function(filename) {
 
 var config = require('config');
 var app  = express();
+
+
 
 var routes = require('./routes/routes');
 var users = require("./routes/users/users");
@@ -79,6 +81,7 @@ mongoose.connect('mongodb://127.0.0.1/beavr');
 
 app.set('mongoose', mongoose);
 
+app.use('/api/uploads', express.static(__dirname + '/uploads'));
 app.use('/api', routes);
 app.use('/api/users', users);
 app.use('/api/applications', applications);

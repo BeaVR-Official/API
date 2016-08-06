@@ -20,7 +20,7 @@ var userSchema = new Schema({
         progression : { type: Number, default: 0}
     }],
     admin           : { type: Boolean, default: false},
-    rights           : { type: ObjectId, ref: 'rights', default:ObjectId("57a3609edfc0aa2381bde52e") },
+    rights           : { type: ObjectId, ref: 'rights', default: "57a3609edfc0aa2381bde52e"},
     public          : {
         pseudo      : String,
         email       : String,
@@ -54,7 +54,6 @@ userSchema.pre('save', true, function(next, done) {
         this.created_at = currentDate;
     this.public.pseudo = this.pseudo;
     this.public.email = this.email;
-    this.public.picture = this.picture;
     this.public.created_at = this.created_at;
     this.id = this._id.toHexString();
     var self = this;
