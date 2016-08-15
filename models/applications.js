@@ -14,7 +14,7 @@ var applicationsSchema = new Schema({
     screenshots     : [{type: String}],
     url             : String,
     categoriesName  : [{ type: ObjectId, ref: 'categories'}],
-    devicesNames    : [{ type: ObjectId, ref : 'devices'}],
+    devicesName     : [{ type: ObjectId, ref : 'devices'}],
     price           : { type: Number, required: true, min: 0, max: 99, default: 0},
     author          : {type: ObjectId, ref: 'users', required: true},
     noteAvg         : {type: Number, default: 0},

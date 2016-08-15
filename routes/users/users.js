@@ -119,10 +119,13 @@ router.get("/:idUser",
     permissions(["logged"]),
     function(req, res, next){
         try {
-            Users.findOne({id: req.user.id}, function(err, user) {
+            Users.findOne({id: req.user.id}).exec(function(err, user) {
                 if (err) return next(err);
                 else if (user == undefined || user == null) return next(req.app.getError(403, "Forbidden : invalid token", null));
-                else Users.findOne({id: req.params.idUser}).populate("rights").populate("author", "public").exec(function(err, userSearch) {
+                else Users.findOne({id: req.params.idUser}).populate("rights").populate("author", "public").
+                    populate([{path: "applications", model: "applications", populate: { path: "devicesName", model: "devices"}},
+                        { path: "applications", model:"applications", populate: {path: "categoriesName", model:"categories"}}]).
+                    exec(function(err, userSearch) {
                         if (err) return next(err);
                         else if (userSearch == null || userSearch == undefined) return next(req.app.getError(404, "User not found", null));
                         else
@@ -259,6 +262,8 @@ router.delete("/:idUser",
     }
 );
 
+
+
 /**
  * @api {put} /users/:idUser Modifier un utilisateur
  * @apiVersion 1.0.0
@@ -326,23 +331,20 @@ router.put("/:idUser",
                                     userSearch[key] = req.body[key];
                             }
                             else if (key == "picture" && req.body["picture"].buffer != undefined && req.body["picture"].filename != undefined) {
-
                                 var filename = shortid.generate() + "." + req.body.picture.filename.split('.').pop();
                                 var buff = new Buffer(req.body.picture.buffer
                                     .replace(/^data:image\/(png|gif|jpeg);base64,/,''), 'base64');
                                 var path = "http://beavr.fr:3000/api/uploads/";
+                                var old = userSearch.picture.substring(path.length, userSearch.picture.length);
+                                userSearch.picture = path + filename;
+                                userSearch.public.picture = userSearch.picture;
                                 fs.writeFile('/home/API/uploads/' + filename, buff, function(err) {
-                                    console.log(err);
                                     if(!err){
-                                        var old = userSearch.picture.substring(path.length, userSearch.picture.length);
-                                        console.log(old);
                                         fs.exists('/home/API/uploads/' + old, function(exists) {
-                                            if(exists) {
+;                                            if(exists) {
                                                 fs.unlink('/home/API/uploads/' + old);
                                             }
                                         });
-                                        userSearch.picture = "http://beavr.fr:3000/api/uploads/" + filename;
-                                        userSearch.public.picture = "http://beavr.fr:3000/api/uploads/" + filename;
                                     }
                                     else {
                                         userSearch.picture = "http://www.outsystems.com/PortalTheme/img/UserImage.png?23465";

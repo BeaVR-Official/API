@@ -54,11 +54,12 @@ var ObjectId = require('mongoose').Types.ObjectId;
  */
 
 function depileApplications(applications, next) {
-    if (applications.length <= 0)
+    if (applications.length <= 0) {
         return next();
+    }
     Comments.aggregate(
         [
-            {$match: {application: new ObjectId(applications[applications.length - 1].id)}},
+            {$match: {application:  applications[applications.length - 1]._id}},
             {
                 $group: {
                     _id: applications[applications.length - 1].id,
@@ -68,14 +69,15 @@ function depileApplications(applications, next) {
             }
         ],
         function (err, result) {
-            Applications.findOne({id: (result.length > 0) ? result[0]._id : 0 }, function (err, res) {
+            Applications.findOne({_id: (result.length > 0) ? ObjectId(result[0]._id) : 0 }, function (err, res) {
                 if (res != null && res != undefined) {
                     res.noteAvg = result[0].average;
                     res.commentsNb = result[0].count;
-                    res.save().then(function () {
+                    res.save(function(err) {
+                        if (err) console.log(err);
                         applications.pop();
                         depileApplications(applications, next);
-                    })
+                    });
                 }
                 else {
                     applications.pop();
@@ -114,7 +116,7 @@ router.get("/",
                         query[key] = req.query[key];
                 }
             }
-            Applications.find(query).populate("author", "public").exec(function(err, applications) {
+            Applications.find(query).populate("author", "public").populate("devicesName").populate("devicesName").exec(function(err, applications) {
                 if (err) return next(err);
                 else {
                     return res.status(200).json({
@@ -131,19 +133,6 @@ router.get("/",
         catch (error) {
             return next(error);
         }
-        /*    try {
-         var query = "SELECT * FROM `AllApplicationsInfos`";
-
-         req.app.locals.connection.query(query, function(err, rows){
-         if (!err)
-         res.status(200).json({status: 200, message: "OK", data: {Applications: rows}});
-         else
-         return next(req.app.getError(500, "Internal error width database", err));
-         });
-         }
-         catch (error) {
-         return next(error);
-         }*/
     }
 );
 
@@ -190,26 +179,6 @@ router.get("/pending",
         } catch (error) {
             return next(error);
         }
-        /*    try {
-         var query = "SELECT * FROM `AllApplicationsInfos` WHERE ??=?";
-         var table = ["state", req.params.state];
-
-         query = mysql.format(query, table);
-         req.app.locals.connection.query(query, function(err, rows){
-         if (!err)
-         {
-         if (rows.length == 0)
-         return next(req.app.getError(404, "State not found", null)); // <---- Should be modified
-         else {
-         res.status(200).json({status: 200, message: "OK", data: {Applications: rows}});
-         }
-         }
-         else
-         return next(req.app.getError(500, "Internal error width database", err));
-         });
-         } catch (error) {
-         return next(error);
-         }*/
     }
 );
 
@@ -358,7 +327,7 @@ router.get("/:idApplication",
     },
     function(req, res, next) {
         try {
-            Applications.findOne({ _id : new ObjectId(req.params.idApplication) }).populate("author", "public").exec(function(err, app) {
+            Applications.findOne({ _id : new ObjectId(req.params.idApplication) }).populate("author", "public").populate("devicesName").populate("categoriesName").exec(function(err, app) {
                 if (err) return next(err);
                 else if (app == undefined || app == null) return next(req.app.getError(404, "Not found : application not found", null));
                 else res.status(200).json({
@@ -506,23 +475,6 @@ router.post("/",
         } catch (error) {
             return next(error);
         }
-        /* try {
-         var query = "INSERT INTO ??(??, ??, ??, ??, ??, ??, ??, ??) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-         var table = ["Applications", "name", "description", "creationDate", "price", "creator", "url", "state", "logo",
-         req.body.name, req.body.description, (new Date ((new Date((new Date(new Date())).toISOString() )).getTime() - ((new Date()).getTimezoneOffset()*60000))).toISOString().slice(0, 19).replace('T', ' '),
-         req.body.price, req.body.creator, req.body.url, req.body.state, req.body.logo];
-
-         query = mysql.format(query,table);
-
-         req.app.locals.connection.query(query, function(err,rows){
-         if (!err)
-         res.status(200).json({status: 200, message: "OK", data: {}});
-         else
-         return next(req.app.getError(500, "Internal error width database", err));
-         });
-         } catch (error) {
-         return next(error);
-         }*/
     }
 );
 
@@ -712,26 +664,6 @@ router.put("/:idApplication",
         } catch (error) {
             return next(error);
         }
-        /*    try {
-         var query = "UPDATE ?? SET ?? = ?, ?? = ?, ?? = ?, ?? = ?, ?? = ?, ?? = ? WHERE ?? = ?";
-         var table = ["applications","name",req.body.name,
-         "description",req.body.description,
-         "price",req.body.price,
-         "headdevice",req.body.headdevice,
-         "handsdevice",req.body.handsdevice,
-         "category",req.body.category,
-         "idApplication",req.params.idApplication];
-         query = mysql.format(query,table);
-         req.app.locals.connection.query(query,function(err,rows){
-         if(err) {
-         return next(req.app.getError(500, "Internal error width database", err));
-         } else {
-         res.status(200).json({status: 200, message: "OK", data: {}});
-         }
-         });
-         } catch (error) {
-         return next(error);
-         }*/
     }
 );
 
@@ -864,11 +796,16 @@ router.delete("/:idApp/comments/:idComment",
                 else {
                     comment.remove(function(err) {
                         if (err) return next(err);
-                        else res.status(200).json({
-                            status      : 200,
-                            message     : "Successfully deleted",
-                            data        : {}
-                        });
+                        else {
+                            res.status(200).json({
+                                status      : 200,
+                                message     : "Successfully deleted",
+                                data        : {}
+                            });
+                            Applications.find(function(err, res) {
+                                if (!err) depileApplications(res, function() {return;});
+                            });
+                        }
                     });
                 }
             })
@@ -876,21 +813,6 @@ router.delete("/:idApp/comments/:idComment",
         catch (error) {
             return next(error);
         }
-        /*  try {
-         var query = "DELETE from ?? WHERE ??=?";
-         var table = ["Comments","idComment",req.params.idComment];
-         query = mysql.format(query,table);
-         req.app.locals.connection.query(query,function(err,rows){
-         if(err) {
-         return next(req.app.getError(500, "Internal error width database", err));
-         } else {
-         res.status(200).json({status: 200, message: "OK", data: {}});
-         }
-         });
-         }
-         catch (error) {
-         return next(error);
-         }*/
     }
 );
 
@@ -932,7 +854,7 @@ router.post("/:idApp/comments",
     permissions(["logged"]),
     function(req, res, next) {
         try {
-            Applications.findOne({ id : req.params.idApp}, function(err, app) {
+            Applications.findOne({ _id :  ObjectId(req.params.idApp)}, function(err, app) {
                 if (err) return next(err);
                 else if (app == null || app == undefined) return next(req.app.getError(404, "Not found : invalid application id", null));
                 else {
@@ -956,8 +878,8 @@ router.post("/:idApp/comments",
                 title       : req.body.title,
                 comment     : req.body.comment,
                 rating      : req.body.rating,
-                author      : ObjectId(req.user.id),
-                application : ObjectId(req.params.idApp)
+                author      : req.user.id,
+                application : req.params.idApp
             });
 
             newComment.save(function(err){
@@ -967,6 +889,9 @@ router.post("/:idApp/comments",
                         status      : 200,
                         message     : "OK",
                         data        : {}
+                    });
+                    Applications.find(function(err, res) {
+                        if (!err) depileApplications(res, function() {return;});
                     });
                 }
             });
@@ -1009,6 +934,9 @@ router.put("/:idApp/comments/:idComment",
                                     message      : "Comment successfully modified",
                                     data         : {}
                                 });
+                                Applications.find(function(err, res) {
+                                    if (!err) depileApplications(res, function() {return;});
+                                });
                             }
                         });
                     }
@@ -1018,21 +946,6 @@ router.put("/:idApp/comments/:idComment",
         catch (error) {
             return next(error);
         }
-        /*  try {
-         var query = "DELETE from ?? WHERE ??=?";
-         var table = ["Comments","idComment",req.params.idComment];
-         query = mysql.format(query,table);
-         req.app.locals.connection.query(query,function(err,rows){
-         if(err) {
-         return next(req.app.getError(500, "Internal error width database", err));
-         } else {
-         res.status(200).json({status: 200, message: "OK", data: {}});
-         }
-         });
-         }
-         catch (error) {
-         return next(error);
-         }*/
     }
 );
 
@@ -1066,23 +979,23 @@ router.get('/:idApplication/payment',
 router.get('/:idApplication/payment/ExecutePayment',
     permissions(["all"]),
     function(req, res, next) {
-    if (req.query.success == true) {
-        var paymentId = req.session.paymentId;
-        var payerId = req.param('PayerID');
+        if (req.query.success == true) {
+            var paymentId = req.session.paymentId;
+            var payerId = req.param('PayerID');
 
-        var details = { "payer_id": payerId };
-        paypal.payment.execute(paymentId, details, function (error, payment) {
-            if (error) {
-                console.log(error);
-            } else {
-                res.send("Hell yeah!");
-            }
-        });
+            var details = { "payer_id": payerId };
+            paypal.payment.execute(paymentId, details, function (error, payment) {
+                if (error) {
+                    console.log(error);
+                } else {
+                    res.send("Hell yeah!");
+                }
+            });
+        }
+        else {
+            console.log("failed");
+        }
     }
-    else {
-        console.log("failed");
-    }
-}
 );
 
 function createPayment(req, res, app, next) {

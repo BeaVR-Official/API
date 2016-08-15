@@ -10,7 +10,9 @@ process.env.mailPort = 465;
 process.env.mailUser = 'contact@beavr.fr';
 process.env.jwtSecretKey = 'XSVgtQ\;>1!\,z`\,xDA*zMzs|#\$Iku-`P(l9p.u/1IO][#wKs\cXS\ElxM~P{pw4J';
 process.env.NODE_ENV = "debug";
-process.env.dataServer = "http://127.0.0.1:5001/";
+process.on('uncaughtException', function (error) {
+    console.log(error);
+});
 
 fs.readdirSync(__dirname + '/models').forEach(function(filename) {
  if (~filename.indexOf('.js')) require(__dirname + '/models/' + filename);
@@ -31,6 +33,8 @@ var newsletter = require('./routes/newsletter/newsletter');
 var mongo_express = require('mongo-express/lib/middleware');
 var mongo_express_config = require('./node_modules/mongo-express/config');
 var passport = require('passport');
+var morgan = require('morgan');
+
 app.use(require("express-session")({
     secret: process.env.jwtSecretKey,
     resave: false,
@@ -39,6 +43,7 @@ app.use(require("express-session")({
 
 app.use(passport.initialize());
 app.use(passport.session());
+app.use(morgan(':method :url :status :response-time ms - :res[content-length]'));
 
 require("./config/passport")(passport);
 require('./routes/auth/google')(app, passport);
@@ -55,9 +60,9 @@ paypal.configure({
 
 app.set('paypal', paypal);
 
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({limit: '50mb', extended: true }));
 
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '50mb' }));
 app.use('/admin', mongo_express(mongo_express_config));
 
 app.use(function (req, res, next) {
