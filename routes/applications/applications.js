@@ -8,8 +8,10 @@ var expressjwt = require('express-jwt');
 var Applications = require('../../models/applications');
 var Validation = require('../../models/validation');
 var Comments = require('../../models/comments');
+var Purchase = require('../../models/purchase');
 var permissions = require('../permissions');
 var ObjectId = require('mongoose').Types.ObjectId;
+
 
 /**
  * @api {get} /applications/ Liste des applications
@@ -106,7 +108,7 @@ router.get("/",
                 name            : "",
                 categoriesName  : [],
                 devicesNames    : [],
-                authorName     : ""
+                author          : ""
             };
             for (var key in req.query) {
                 if (req.query[key] != undefined && schema[key] != undefined) {
@@ -116,7 +118,7 @@ router.get("/",
                         query[key] = req.query[key];
                 }
             }
-            Applications.find(query).populate("author", "public").populate("devicesName").populate("devicesName").exec(function(err, applications) {
+            Applications.find(query).populate("author", "public").populate("devicesName").populate("categoriesName").exec(function(err, applications) {
                 if (err) return next(err);
                 else {
                     return res.status(200).json({
@@ -131,6 +133,54 @@ router.get("/",
             });
         }
         catch (error) {
+            return next(error);
+        }
+    }
+);
+
+router.get("/purchase",
+    expressjwt({secret: process.env.jwtSecretKey}),
+    permissions(["admin"]),
+    function(req, res, next) {
+        try {
+            Purchase.find({}, function(err, purchases) {
+                if (err) return next(err);
+                else {
+                    res.status(200).json({
+                        status: 200,
+                        message: "OK",
+                        data: {
+                            purchases: purchases
+                        }
+                    });
+                }
+            });
+        } catch (error) {
+            return next(error);
+        }
+    }
+);
+
+router.get("/:idApplication/purchase",
+    expressjwt({secret: process.env.jwtSecretKey}),
+    permissions(["all"]),
+    function(req, res, next){
+        try {
+            console.log("coucou");
+            Purchase.find({application: req.params.idApplication}, function(err, purchases) {
+                if (err) return next(err);
+                else {
+                    return res.status(200).json({
+                        status: 200,
+                        message: "OK",
+                        data: {
+                            count : purchases.length,
+                            purchase: purchases
+                        }
+                    });
+                }
+            })
+        } catch (error) {
             return next(error);
         }
     }
@@ -959,6 +1009,19 @@ router.get('/:idApplication/payment',
                 else if (app == null || app == undefined) return next(req.app.getError(404, "Not found : invalid application id", null));
                 else {
                     if (app.price == 0) {
+                        User.findOne({id : req.user.id}, function(err, user) {
+                            var purchase = new Purchase();
+                            purchase.application = req.params.idApplication;
+                            purchase.amount = 0;
+                            purchase.payment = "none";
+                            purchase.save(function(err) {
+                                if (err) return next(err);
+                                else {
+                                    user.purchase.push(purchase._id);
+                                }
+                            });
+                            user.applications.push(req.params.idApplication);
+                        });
                         return res.status(200).json({
                             status      : 200,
                             message     : "Application added",
@@ -986,9 +1049,14 @@ router.get('/:idApplication/payment/ExecutePayment',
             var details = { "payer_id": payerId };
             paypal.payment.execute(paymentId, details, function (error, payment) {
                 if (error) {
-                    console.log(error);
+                    res.send('')
                 } else {
-                    res.send("Hell yeah!");
+                    res.send("200").json({
+                        status: 200,
+                        message: "OK",
+                        data: {}
+                    });
+                    next();
                 }
             });
         }
@@ -1005,8 +1073,8 @@ function createPayment(req, res, app, next) {
         "payer": {
         },
         "redirect_urls": {
-            "return_url": "http://www.176.150.15.55.xip.io/api/applications/" + req.params.idApplication + "payment/ExecutePayment?success=true",
-            "cancel_url":  "http://www.176.150.15.55.xip.io/api/applications/" + req.params.idApplication + "payment/ExecutePayment?success=true"
+            "return_url": "http://www.beavr.fr:3000/api/applications/" + req.params.idApplication + "payment/ExecutePayment?success=true",
+            "cancel_url":  "http://www.beavr.fr:3000/api/applications/" + req.params.idApplication + "payment/ExecutePayment?success=false"
         },
         "transactions": [{
             "amount": {

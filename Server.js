@@ -52,10 +52,8 @@ require("./routes/auth/facebook")(app, passport);
 var paypal = require('paypal-rest-sdk');
 paypal.configure({
     'mode': 'sandbox', //sandbox or live
-    'host': 'api.sandbox.paypal.com',
-    'port': '',
-    'client_id': 'AUyU841kaL-ok-Qa_LbkNQWrUofpnKV-ZAZVOOiGzW6g6wWvn18M9SCSR3vlJFhkKPt65YJG7Je84W-l',
-    'client_secret': 'EKWXTP9WKcY893e2PmfksMBZoL_CGbQK2UuFWcSlz9WdPL6nNaU4gByzkEiWUiIaWtCnuy4Rcy2iUNHu'
+    'client_id': 'AUmyssMjyk_15NgOdzqywp-dymajU9PHluffDommedXoSmNjapwsq85WXHf2lflXlFp04PPktl8kMQZY',
+    'client_secret': 'EKBI_jwlHHKzagiuPr3enPxze4YLSQQVAzGSs1CeI6l8HveY6KsblAxLRorFhQLpwiLVdSSNaM1XwR26'
 });
 
 app.set('paypal', paypal);
@@ -86,7 +84,8 @@ mongoose.connect('mongodb://127.0.0.1/beavr');
 
 app.set('mongoose', mongoose);
 
-app.use('/api/uploads', express.static(__dirname + '/uploads'));
+app.use('/api/uploads/users', express.static(__dirname + '/uploads/users'));
+app.use('/api/uploads/devices', express.static(__dirname + '/uploads/devices'));
 app.use('/api', routes);
 app.use('/api/users', users);
 app.use('/api/applications', applications);

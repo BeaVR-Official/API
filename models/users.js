@@ -15,6 +15,7 @@ var userSchema = new Schema({
     email           : { type: String, default: "", unique: true},
     picture         : { type: String, default : "http://www.outsystems.com/PortalTheme/img/UserImage.png?23465" },
     applications    : [{ type: ObjectId, ref: 'applications'}],
+    purchase        : [{type: ObjectId, ref: 'purchase'}],
     progressions    : [{
         application : { type: ObjectId, ref: 'applications'},
         progression : { type: Number, default: 0}

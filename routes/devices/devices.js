@@ -7,6 +7,7 @@ var router = express.Router();
 var expressjwt = require('express-jwt');
 var Devices = require('../../models/devices');
 var permissions = require("../permissions");
+var fs = require("fs");
 
 /**
  * @api {get} /devices/ Liste des devices
@@ -267,7 +268,28 @@ router.put("/:idDevice",
                 else if (device == undefined || device == null) return next(req.app.getError(404, "Not found: device unknown"), null);
                 else {
                     for (var key in req.body) {
-                        device[key] = req.body[key];
+                        if (key == "picture" && req.body["picture"].buffer != undefined && req.body["picture"].filename != undefined) {
+                            var filename = shortid.generate() + "." + req.body.picture.filename.split('.').pop();
+                            var buff = new Buffer(req.body.picture.buffer
+                                .replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
+                            var path = "http://beavr.fr:3000/api/uploads/devices/";
+                            var old = device.image.substring(path.length, device.image.length);
+                            device.image = path + filename;
+                            fs.writeFile('/home/API/uploads/devices/' + filename, buff, function (err) {
+                                if (!err) {
+                                    fs.exists('/home/API/uploads/devices/' + old, function (exists) {
+                                        if (exists) {
+                                            fs.unlink('/home/API/uploads/devices/' + old);
+                                        }
+                                    });
+                                }
+                                else {
+                                    device.image = "https://d30y9cdsu7xlg0.cloudfront.net/png/16261-200.png";
+                                }
+                            });
+                        }
+                        else
+                            device[key] = req.body[key];
                     }
                     device.save(function(err) {
                         if (err) return next(err);

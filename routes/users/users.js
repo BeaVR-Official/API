@@ -334,15 +334,15 @@ router.put("/:idUser",
                                 var filename = shortid.generate() + "." + req.body.picture.filename.split('.').pop();
                                 var buff = new Buffer(req.body.picture.buffer
                                     .replace(/^data:image\/(png|gif|jpeg);base64,/,''), 'base64');
-                                var path = "http://beavr.fr:3000/api/uploads/";
+                                var path = "http://beavr.fr:3000/api/uploads/users/";
                                 var old = userSearch.picture.substring(path.length, userSearch.picture.length);
                                 userSearch.picture = path + filename;
                                 userSearch.public.picture = userSearch.picture;
-                                fs.writeFile('/home/API/uploads/' + filename, buff, function(err) {
+                                fs.writeFile('/home/API/uploads/users/' + filename, buff, function(err) {
                                     if(!err){
-                                        fs.exists('/home/API/uploads/' + old, function(exists) {
+                                        fs.exists('/home/API/uploads/users/' + old, function(exists) {
 ;                                            if(exists) {
-                                                fs.unlink('/home/API/uploads/' + old);
+                                                fs.unlink('/home/API/uploads/users/' + old);
                                             }
                                         });
                                     }
