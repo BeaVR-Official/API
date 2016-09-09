@@ -45,6 +45,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(morgan(':method :url :status :response-time ms - :res[content-length]'));
 
+
 require("./config/passport")(passport);
 require('./routes/auth/google')(app, passport);
 require("./routes/auth/facebook")(app, passport);
@@ -84,8 +85,10 @@ mongoose.connect('mongodb://127.0.0.1/beavr');
 
 app.set('mongoose', mongoose);
 
+app.use('/api/uploads/applications', express.static(__dirname + '/uploads/applications'));
 app.use('/api/uploads/users', express.static(__dirname + '/uploads/users'));
 app.use('/api/uploads/devices', express.static(__dirname + '/uploads/devices'));
+app.use('/api/uploads/pictures', express.static(__dirname + '/uploads/pictures'));
 app.use('/api', routes);
 app.use('/api/users', users);
 app.use('/api/applications', applications);

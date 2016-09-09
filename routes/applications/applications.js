@@ -11,7 +11,8 @@ var Comments = require('../../models/comments');
 var Purchase = require('../../models/purchase');
 var permissions = require('../permissions');
 var ObjectId = require('mongoose').Types.ObjectId;
-
+var multer = require('multer');
+var uploadPictures = multer({ dest: '/home/API/uploads/pictures/'});
 
 /**
  * @api {get} /applications/ Liste des applications
@@ -143,7 +144,7 @@ router.get("/purchase",
     permissions(["admin"]),
     function(req, res, next) {
         try {
-            Purchase.find({}, function(err, purchases) {
+            Purchase.find().exec(function(err, purchases) {
                 if (err) return next(err);
                 else {
                     res.status(200).json({
@@ -164,9 +165,8 @@ router.get("/purchase",
 router.get("/:idApplication/purchase",
     expressjwt({secret: process.env.jwtSecretKey}),
     permissions(["all"]),
-    function(req, res, next){
+    function(req, res, next) {
         try {
-            console.log("coucou");
             Purchase.find({application: req.params.idApplication}, function(err, purchases) {
                 if (err) return next(err);
                 else {
@@ -175,7 +175,8 @@ router.get("/:idApplication/purchase",
                         message: "OK",
                         data: {
                             count : purchases.length,
-                            purchase: purchases
+                            purchase: purchases,
+                            app: req.params.idApplication
                         }
                     });
                 }
@@ -525,6 +526,48 @@ router.post("/",
         } catch (error) {
             return next(error);
         }
+    }
+);
+
+router.post("/upload/screens",
+    expressjwt({secret: process.env.jwtSecretKey}),
+    permissions(["admin", "Developer"]),
+    uploadPictures.array('screens', 3),
+    function(req, res, next) {
+        var files = [];
+        for (var i = 0; i < req.files['screens'].length; ++i) {
+            console.log(req.screens);
+            files.push("http://beavr.fr:3000/api/uploads/pictures/" + req.files['screens'][i].filename + ".png");
+            fs.rename(req.files['screens'][i].path, req.files['screens'][i].path + ".png", function (err) {
+                if (err)
+                    return next(err);
+            });
+        }
+        return res.status(200).json({
+            status      : 200,
+            message     : "OK",
+            data        : {
+                count   : files.length,
+                screens : files
+            }
+        });
+    }
+);
+
+router.delete("/upload/screens/:filename",
+    expressjwt({secret: process.env.jwtSecretKey}),
+    permissions(["admin"]),
+    function(req, res, next) {
+        if (fs.existsSync("/home/API/uploads/pictures/" + req.params.filename)) {
+            fs.unlink("/home/API/uploads/pictures/" + req.params.filename, function(err) {
+                if (err) return next(err);
+                else return res.status(200).json({
+                    status      : 200,
+                    message     : "OK"
+                });
+            });
+        }
+       else return next(req.app.getError(404, "File not found", null));
     }
 );
 

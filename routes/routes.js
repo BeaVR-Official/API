@@ -23,6 +23,10 @@ var Users = require('../models/users');
 var CryptoJS = require('crypto-js');
 var Feedbacks = require("../models/feedback");
 var permissions = require("./permissions");
+var fs = require("fs");
+var shortid = require('shortid');
+var multer = require('multer');
+var uploadApplication = multer({ dest: '/home/API/uploads/applications/'});
 
 /**
  * @api {get} / Réponse basique
@@ -43,51 +47,15 @@ var permissions = require("./permissions");
 router.get("/",
     permissions(["all"]),
     function(req, res, next){
-    try {
-        res.status(200).json({
-            status  : 200,
-            message : "Welcome on BeaVR API."
-        });
-    }  catch (error) {
-        return next(error);
+        try {
+            res.status(200).json({
+                status  : 200,
+                message : "Welcome on BeaVR API."
+            });
+        }  catch (error) {
+            return next(error);
+        }
     }
-}
-);
-
-/**
- * @api {post} /registration Inscription
- * @apiVersion 1.0.0
- * @apiName Inscription
- * @apiGroup Autres
- * @apiDescription Permet l'inscription d'un nouvel utilisateur.
- *
- * @apiParam {String} email Adresse mail de l'utilisateur
- * @apiParam {String} pseudo Pseudonyme de l'utilisateur
- * @apiParam {String} password Mot de passe de l'utilisateur
- *
- * @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
- * @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
- *
- * @apiSuccessExample Succès - Réponse :
- *     {
-  *       "Error": false,
-  *       "Code" : 1
-  *     }
- *
- * @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
- * @apiError (Erreur) {Number} Code Code d'erreur (100 = Un des champs est mal renseigné, 101 = L'utilisateur existe déja, 104 = Le pseudonyme est déjà utilisé)
- *
- * @apiErrorExample Erreur - Réponse :
- *     {
-  *       "Error" : true,
-  *       "Code" : 100
-  *     }
- *
- */  // -------> Checked!!
-router.post("/registration",
-    function(req,res, next) {
-    return next(req.app.getError(404, "Request deprecated. See POST /api/users", {}));
-}
 );
 
 /**
@@ -238,52 +206,18 @@ router.get('/validateToken',
             Users.findOne({ id: userId, token: req.headers['authorization']}, function(err, user) {
                 if (err) return next(err);
                 else res.status(200).json({
-                        status      : 200,
-                        message     : "Valid Token",
-                        data        : {
-                            valide  : (user == undefined || user == null) ? false : true,
-                            userId  : (user == undefined || user == null) ? null : user.id
-                        }
-                    });
+                    status      : 200,
+                    message     : "Valid Token",
+                    data        : {
+                        valide  : (user == undefined || user == null) ? false : true,
+                        userId  : (user == undefined || user == null) ? null : user.id
+                    }
+                });
             });
         } catch (error) {
             return next(error);
         }
     }
-);
-
-/**
- * @api {post} /email Vérifier l'existence d'une adresse mail
- * @apiVersion 1.0.0
- * @apiName Vérifier l'existence d'une adresse mail
- * @apiGroup Autres
- * @apiDescription Vérifie si une adresse mail existe bien dans la base de données.
- *
- * @apiParam {String} email Adresse mail de l'utilisateur
- *
- * @apiSuccess (Succès) {Boolean} Error Retourne "false" en cas de réussite
- * @apiSuccess (Succès) {Number} Code Code d'erreur (1 = Aucune erreur détectée)
- *
- * @apiSuccessExample Succès - Réponse :
- *     {
-  *       "Error": false,
-  *       "Code" : 1
-  *     }
- *
- * @apiError (Erreur) {Boolean} Error Retourne "true" en cas d'erreur
- * @apiError (Erreur) {Number} Code Code d'erreur (102 = Erreur lors de la requête, 103 = L'adresse mail n'existe pas)
- *
- * @apiErrorExample Erreur - Réponse :
- *     {
-  *       "Error" : true,
-  *       "Code" : 102
-  *     }
- *
- */
-router.post("/email",
-    function(req,res, next){
-    return next(req.app.getError(404, "Request deprecated."), null);
-}
 );
 
 /**
@@ -597,6 +531,24 @@ router.get("/dashboardInfos",
         } catch (error) {
             return next(error);
         }
+    }
+);
+
+router.post("/upload/applications",
+    expressjwt({secret: process.env.jwtSecretKey}),
+    permissions(["logged"]),
+    uploadApplication.single('file'),
+    function(req, res, next) {
+        fs.rename(req.file.path, req.file.path + ".zip", function (err) {
+            if (err) return next(err);
+            return res.status(200).json({
+                status: 200,
+                message: "OK",
+                data: {
+                    filePath: "http://beavr.fr:3000/api/uploads/applications/" + req.file.filename + ".zip"
+                }
+            })
+        });
     }
 );
 

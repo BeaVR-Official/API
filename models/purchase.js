@@ -7,7 +7,7 @@ var Schema = mongoose.Schema;
 var ObjectId = Schema.Types.ObjectId;
 
 var purchaseShema = new Schema({
-    application     : { type: ObjectId, required: true, ref : 'application' },
+    application     : { type: ObjectId, required: true, ref : 'applications' },
     payment         : {type: String},
     amount          : {type: Number, default: 0},
     created_at      : Date,
@@ -22,6 +22,6 @@ purchaseShema.pre('save', function(next) {
     next();
 });
 
-var Purchase = mongoose.model('purchase', purchaseShema);
+var Purchase = mongoose.model('purchases', purchaseShema);
 
 module.exports = Purchase;

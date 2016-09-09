@@ -124,7 +124,8 @@ router.get("/:idUser",
                 else if (user == undefined || user == null) return next(req.app.getError(403, "Forbidden : invalid token", null));
                 else Users.findOne({id: req.params.idUser}).populate("rights").populate("author", "public").
                     populate([{path: "applications", model: "applications", populate: { path: "devicesName", model: "devices"}},
-                        { path: "applications", model:"applications", populate: {path: "categoriesName", model:"categories"}}]).
+                        { path: "applications", model:"applications", populate: {path: "categoriesName", model:"categories"}},
+                        { path: "purchase", model: "purchases", populate: {path: "application", select:"name", model: "applications"}}]).
                     exec(function(err, userSearch) {
                         if (err) return next(err);
                         else if (userSearch == null || userSearch == undefined) return next(req.app.getError(404, "User not found", null));
