@@ -13,7 +13,7 @@ var permissions = require('../permissions');
 var ObjectId = require('mongoose').Types.ObjectId;
 var multer = require('multer');
 var uploadPictures = multer({ dest: '/home/API/uploads/pictures/'});
-
+var uploadApplications = multer({ dest: '/home/API/uploads/applications/'});
 /**
  * @api {get} /applications/ Liste des applications
  * @apiVersion 1.0.0
@@ -567,7 +567,45 @@ router.delete("/upload/screens/:filename",
                 });
             });
         }
-       else return next(req.app.getError(404, "File not found", null));
+        else return next(req.app.getError(404, "File not found", null));
+    }
+);
+
+router.post("/uploads/applications",
+    expressjwt({secret: process.env.jwtSecretKey}),
+    permissions(["admin", "Developer"]),
+    uploadApplications.single("file"),
+    function(req, res, next) {
+        fs.rename(req.file.path, req.file.path + ".zip", function (err) {
+            if (err)
+                return next(err);
+            else {
+                return res.status(200).json({
+                    status      : 200,
+                    message     : "OK",
+                    data        : {
+                        source  : "http://beavr.fr:3000/api/uploads/applications/" + req.file.filename + ".zip"
+                    }
+                });
+            }
+        });
+    }
+);
+
+router.delete("/uploads/applications/:applicationName",
+    expressjwt({secret: process.env.jwtSecretKey}),
+    permissions(["admin"]),
+    function(req, res, next) {
+        if (fs.existsSync("/home/API/uploads/applications/" + req.params.applicationName)) {
+            fs.unlink("/home/API/uploads/applications/" + req.params.applicationName, function(err) {
+                if (err) return next(err);
+                else return res.status(200).json({
+                    status      : 200,
+                    message     : "OK"
+                });
+            });
+        }
+        else return next(req.app.getError(404, "File not found", null));
     }
 );
 
