@@ -510,7 +510,7 @@ router.post("/",
                     categoriesName  : req.body.categories,
                     devicesNames    : req.body.devices,
                     authorName      : req.user.id,
-                    price           : req.user.price
+                    price           : req.body.price
                 }
             });
             newValidationApp.save(function(err) {
