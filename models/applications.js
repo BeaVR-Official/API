@@ -28,7 +28,8 @@ applicationsSchema.pre('save', true, function(next, done) {
     this.updated_at = currentDate;
     if (!this.created_at)
         this.created_at = currentDate;
-    this.id = this._id.toHexString();
+    if (this._id != undefined)
+        this.id = this._id.toHexString();
     var self = this;
     mongoose.models["applications"].findOne({name : self.name},function(err, results) {
         if(results && results._id.id != self._id.id) { //there was a result found, so the email address exists

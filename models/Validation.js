@@ -11,23 +11,23 @@ var ValidationSchema = new Schema({
     id              : {type : String, unique: true },
     type                : { type: String, required: true},
     application         : {
-        name            : { type: String, required: true, unique: true },
-        description     : { type: String, required: true },
+        name            : { type: String, unique: true },
+        description     : { type: String},
         logo            : { type:String },
         screenshots     : [{type: String}],
         url             : String,
         categoriesName  : [{ type: ObjectId, ref: 'categories'}],
         devicesNames    : [{ type: ObjectId, ref : 'devices'}],
-        author          : {type: ObjectId, ref: 'users', required: true},
-        price           : {type: Number, required: true}
+        author          : {type: ObjectId, ref: 'users'},
+        price           : {type: Number, min: 0, max: 99}
     },
     device              : {
-        name            : { type: String, required: true, unique: true },
+        name            : { type: String, unique: true },
         image           : String
     },
     categorie           : {
-        name            : { type: String, required: true, unique: true },
-        description     : { type: String, required: true }
+        name            : { type: String, unique: true },
+        description     : { type: String}
     },
     created_at          : Date,
     updated_at          : Date
@@ -35,7 +35,8 @@ var ValidationSchema = new Schema({
 
 ValidationSchema.pre('save',function(next) {
     var currentDate = new Date();
-    this.id = this._id.toHexString();
+    if (this._id != undefined)
+        this.id = this._id.toHexString();
     this.updated_at = currentDate;
     if (!this.created_at)
         this.created_at = currentDate;

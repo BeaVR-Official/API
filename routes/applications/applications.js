@@ -14,6 +14,8 @@ var ObjectId = require('mongoose').Types.ObjectId;
 var multer = require('multer');
 var uploadPictures = multer({ dest: '/home/API/uploads/pictures/'});
 var uploadApplications = multer({ dest: '/home/API/uploads/applications/'});
+var fs = require("fs");
+
 /**
  * @api {get} /applications/ Liste des applications
  * @apiVersion 1.0.0
@@ -236,27 +238,36 @@ router.get("/pending",
 /* POST /applications/pending/:idApp/validate
  * Publie une application en attente de validation
  * */
-router.post("/pending/:idApp/validate",
+router.get("/pending/:idApp/validate",
     expressjwt({secret: process.env.jwtSecretKey}),
     permissions(["admin"]),
     function(req, res, next) {
         try {
-            Validation.findOne({id : req.params.idApp, type: 'application'}, function(err, application) {
+            Validation.findOne({_id : new ObjectId(req.params.idApp), type: 'application'}, function(err, application) {
                 if (err) return next(err);
                 else if (application == null || application == undefined) return next(req.app.getError(404, "Not found : verify id match with pending application", null));
                 else {
-                    var newApplication = Applications();
-                    for (var key in application.application)
-                        newApplication[key] = application.application[key];
+                    var newApplication = new Applications();
+                    newApplication.author = application.application.author;
+                    newApplication.name = application.application.name;
+                    newApplication.description = application.application.description;
+                    newApplication.logo = application.application.logo;
+                    newApplication.screenshots = application.application.screenshots;
+                    newApplication.url = application.application.url;
+                    newApplication.categoriesName = application.application.categoriesName;
+                    newApplication.devicesName = application.application.devicesNames;
+                    newApplication.price = application.application.price;
                     newApplication.save(function(err) {
-                        if (err) return next(err);
+                        if (err) {
+                            return next(err);
+                        }
                         else {
                             res.status(200).json({
                                 status          : 200,
                                 message         : "OK",
                                 data            : {}
                             });
-                            application.delete();
+                            application.remove();
                         }
                     })
                 }
@@ -490,29 +501,28 @@ router.post("/",
     expressjwt({secret: process.env.jwtSecretKey}),
     permissions(["admin", "Developer"]),
     function(req,res, next) {
-        if (req.body.name == undefined || req.body.name == "" ||
+        console.log(req.body);
+        if (req.body.name == undefined || req.body.name == ""||
             req.body.description == undefined || req.body.description == "" ||
-            req.body.price == undefined || req.body.price == "" ||
-            req.body.logo == undefined || req.body.logo.length != "" ||
+            req.body.price == undefined || req.body.price == "" ||
+            req.body.logo == undefined || req.body.logo == "" ||
             req.body.url == undefined || req.body.url == "" ||
-            req.body.devices == undefined || req.body.devices == "" ||
-            req.body.categories == undefined || req.body.categories == "")
+            req.body.devices == undefined || req.body.devices.length == 0 ||
+            req.body.categories == undefined || req.body.categories.length == 0  )
             return next(req.app.getError(400, "Bad request : incorrect or missing parameters", null));
         try {
-            var newValidationApp = new Validation({
-                type            : "application",
-                application     : {
-                    name            : req.body.name,
-                    description     : req.body.description,
-                    logo            : req.body.logo,
-                    screenshots     : (req.body["screenshots"] != undefined) ? req.body.screenshots : [],
-                    url             : req.body.url,
-                    categoriesName  : req.body.categories,
-                    devicesNames    : req.body.devices,
-                    authorName      : req.user.id,
-                    price           : req.body.price
-                }
-            });
+            var newValidationApp = new Validation();
+            newValidationApp.type = "application";
+            newValidationApp.application = {};
+            newValidationApp.application.name = req.body.name;
+            newValidationApp.application.description = req.body.description;
+            newValidationApp.application.logo= req.body.logo;
+            newValidationApp.application.screenshots = (req.body["screenshots"] != undefined) ? req.body.screenshots : [];
+            newValidationApp.application.url = req.body.url;
+            newValidationApp.application.categoriesName = req.body.categories;
+            newValidationApp.application.devicesNames = req.body.devices;
+            newValidationApp.application.author = req.user.id;
+            newValidationApp.application.price = req.body.price;
             newValidationApp.save(function(err) {
                 if (err) return next(err);
                 else res.status(200).json({
@@ -529,16 +539,18 @@ router.post("/",
     }
 );
 
+var multiparty = require('multiparty');
+
+
 router.post("/upload/screens",
     expressjwt({secret: process.env.jwtSecretKey}),
     permissions(["admin", "Developer"]),
     uploadPictures.array('screens', 3),
     function(req, res, next) {
         var files = [];
-        for (var i = 0; i < req.files['screens'].length; ++i) {
-            console.log(req.screens);
-            files.push("http://beavr.fr:3000/api/uploads/pictures/" + req.files['screens'][i].filename + ".png");
-            fs.rename(req.files['screens'][i].path, req.files['screens'][i].path + ".png", function (err) {
+        for (var i = 0; i < req.files.length; ++i) {
+            files.push("http://beavr.fr:3000/api/uploads/pictures/" + req.files[i].filename + ".png");
+            fs.rename(req.files[i].path, req.files[i].path + ".png", function (err) {
                 if (err)
                     return next(err);
             });
@@ -749,21 +761,22 @@ router.put("/:idApplication",
     function(req, res, next) {
         try {
             if (req.user.admin == true) {
-                Applications.findOne({id: req.params.idApplication}, function(err, res) {
+                Applications.findOne({_id: new ObjectId(req.params.idApplication) }, function(err, application) {
                     if (err) return next(err);
                     else if (res == null || res == undefined) return next(req.app.getError(404, "Not found: please verify that application really exist"));
                     else {
                         for (var key in req.body) {
-                            if (res[key] != undefined)
-                                res[key] = req.body[key];
+                            if (application[key] != undefined)
+                                application[key] = req.body[key];
                         }
-                        res.save(function(err) {
+                        console.log("coucou");
+                        application.save(function(err) {
                             if (err) return next(err);
-                            else res.status(200).json({
+                            else return res.status(200).json({
                                 status          : 200,
                                 message         : "OK",
                                 data            : {
-                                    application : res
+                                    application : application
                                 }
                             });
                         });
@@ -771,21 +784,21 @@ router.put("/:idApplication",
                 });
             }
             else {
-                Applications.findOne({id: req.params.idApplication, author : req.user.id}, function(err, res) {
+                Applications.findOne({_id: new ObjectId(req.params.idApplication), author : req.user.id}, function(err, application) {
                     if (err) return next(err);
-                    else if (res == null || res == undefined) return next(req.app.getError(404, "Not found: please verify that application belongs to current user"));
+                    else if (application == null || application == undefined) return next(req.app.getError(404, "Not found: please verify that application belongs to current user"));
                     else {
                         for (var key in req.body) {
-                            if (res[key] != undefined)
-                                res[key] = req.body[key];
+                            if (application[key] != undefined)
+                                application[key] = req.body[key];
                         }
-                        res.save(function(err) {
+                        application.save(function(err) {
                             if (err) return next(err);
-                            else res.status(200).json({
+                            else return res.status(200).json({
                                 status          : 200,
                                 message         : "OK",
                                 data            : {
-                                    application : res
+                                    application : application
                                 }
                             });
                         });
