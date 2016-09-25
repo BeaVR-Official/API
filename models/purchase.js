@@ -10,6 +10,7 @@ var purchaseShema = new Schema({
     application     : { type: ObjectId, required: true, ref : 'applications' },
     payment         : {type: String},
     amount          : {type: Number, default: 0},
+    transactionId   : {type: String},
     created_at      : Date,
     updated_at      : Date
 });

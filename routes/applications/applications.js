@@ -15,6 +15,8 @@ var multer = require('multer');
 var uploadPictures = multer({ dest: '/home/API/uploads/pictures/'});
 var uploadApplications = multer({ dest: '/home/API/uploads/applications/'});
 var fs = require("fs");
+var Users = require('../../models/users');
+var braintree = require("braintree");
 
 /**
  * @api {get} /applications/ Liste des applications
@@ -769,7 +771,6 @@ router.put("/:idApplication",
                             if (application[key] != undefined)
                                 application[key] = req.body[key];
                         }
-                        console.log("coucou");
                         application.save(function(err) {
                             if (err) return next(err);
                             else return res.status(200).json({
@@ -1093,7 +1094,7 @@ router.put("/:idApp/comments/:idComment",
     }
 );
 
-router.get('/:idApplication/payment',
+router.get('/:idApplication/free',
     expressjwt({secret: process.env.jwtSecretKey}),
     permissions(["logged"]),
     function(req, res, next) {
@@ -1102,8 +1103,8 @@ router.get('/:idApplication/payment',
                 if (err) return next(err);
                 else if (app == null || app == undefined) return next(req.app.getError(404, "Not found : invalid application id", null));
                 else {
-                    if (app.price == 0) {
-                        User.findOne({id : req.user.id}, function(err, user) {
+                    if (app.price == "0") {
+                        Users.findOne({id : req.user.id}, function(err, user) {
                             var purchase = new Purchase();
                             purchase.application = req.params.idApplication;
                             purchase.amount = 0;
@@ -1114,16 +1115,19 @@ router.get('/:idApplication/payment',
                                     user.purchase.push(purchase._id);
                                 }
                             });
-                            user.applications.push(req.params.idApplication);
+                            user.applications.push(app._id);
+                            user.save(function(err){
+                                if (err) return next(err);
+                                else return res.status(200).json({
+                                    status      : 200,
+                                    message     : "Application added",
+                                    data        : {}
+                                });
+                            })
                         });
-                        return res.status(200).json({
-                            status      : 200,
-                            message     : "Application added",
-                            data        : {}
-                        })
                     }
                     else {
-                        return createPayment(req, res, app, next);
+                        return next(req.app.getError(402, "Payment needed", { route : "/api/applications/:idApplication/payment" }));
                     }
                 }
             });
@@ -1133,88 +1137,92 @@ router.get('/:idApplication/payment',
     }
 );
 
-router.get('/:idApplication/payment/ExecutePayment',
-    permissions(["all"]),
+router.get('/:idApplication/payment',
+    expressjwt({secret: process.env.jwtSecretKey}),
+    permissions(["logged"]),
     function(req, res, next) {
-        if (req.query.success == true) {
-            var paymentId = req.session.paymentId;
-            var payerId = req.param('PayerID');
-
-            var details = { "payer_id": payerId };
-            paypal.payment.execute(paymentId, details, function (error, payment) {
-                if (error) {
-                    res.send('')
-                } else {
-                    res.send("200").json({
-                        status: 200,
-                        message: "OK",
-                        data: {}
-                    });
-                    next();
-                }
+        try {
+            Applications.findOne({id: req.params.idApplication}, function (err, app) {
+                if (err) return next(err);
+                else if (app == null || app == undefined) return next(req.app.getError(404, "Not found : invalid application id", null));
+                else {
+                        return req.app.get('gateway').clientToken.generate({}, function(err, response) {
+                            if (err) return next(err);
+                            else {
+                                return res.status(200).json({
+                                    status: 200,
+                                    message: "OK",
+                                    data: {
+                                        clientToken : response.clientToken
+                                    }
+                                });
+                            }
+                        });
+                    }
             });
-        }
-        else {
-            console.log("failed");
+        } catch (error) {
+            return next(error);
         }
     }
 );
 
-function createPayment(req, res, app, next) {
-    var method = req.param('method');
-    var payment = {
-        "intent": "sale",
-        "payer": {
-        },
-        "redirect_urls": {
-            "return_url": "http://www.beavr.fr:3000/api/applications/" + req.params.idApplication + "payment/ExecutePayment?success=true",
-            "cancel_url":  "http://www.beavr.fr:3000/api/applications/" + req.params.idApplication + "payment/ExecutePayment?success=false"
-        },
-        "transactions": [{
-            "amount": {
-                "currency": "USD",
-                "total": app.price
-            },
-            "description": "Buy application from BeaVR Store"
-        }]
-    };
-
-    if (method === 'paypal') {
-        payment.payer.payment_method = 'paypal';
-    } else if (method === 'credit_card') {
-        var funding_instruments = [
-            {
-                "credit_card": {
-                    "type": req.param('type').toLowerCase(),
-                    "number": req.param('number'),
-                    "expire_month": req.param('expire_month'),
-                    "expire_year": req.param('expire_year'),
-                    "first_name": req.param('first_name'),
-                    "last_name": req.param('last_name')
-                }
-            }
-        ];
-        payment.payer.payment_method = 'credit_card';
-        payment.payer.funding_instruments = funding_instruments;
-    }
-
-    req.app.get('paypal').payment.create(payment, function (error, payment) {
-        if (error) {
-            return next(error);
-        } else {
-            if(payment.payer.payment_method === 'paypal') {
-                req.session.paymentId = payment.id;
-                var redirectUrl;
-                for (var i = 0; i < payment.links.length; i++) {
-                    var link = payment.links[i];
-                    if (link.method === 'REDIRECT') {
-                        redirectUrl = link.href;
+router.post('/:idApplication/checkout',
+    expressjwt({secret: process.env.jwtSecretKey}),
+    permissions(["logged"]),
+    function(req, res, next) {
+        var nonceFromTheClient = req.body.payment_method_nonce;
+        Applications.findOne({ _id : new ObjectId(req.params.idApplication)}, function(err, app) {
+            if (err) return next(err);
+            else if (app == null || app == undefined) return next(req.app.getError(404, "Application not found."));
+            else {
+                Users.findOne({_id: new ObjectId(req.user.id)}, function(err, user) {
+                    if (err) return next(err);
+                    else if (user == undefined || user == null) return next(req.app.getError(404, "User not found"));
+                    else {
+                        req.app.get('gateway').transaction.sale({
+                            amount: app.price,
+                            paymentMethodNonce: nonceFromTheClient,
+                            options: {
+                                submitForSettlement: true
+                            }
+                        }, function(err, result) {
+                            if (err) return next(err);
+                            else {
+                                if (result.success == true) {
+                                    var purchase = new Purchase();
+                                    purchase.application = req.params.idApplication;
+                                    purchase.amount = result.amount;
+                                    purchase.payment = result.paymentInstrumentType;
+                                    purchase.transactionId = result.id;
+                                        purchase.save(function(err) {
+                                            if (err) return next(err);
+                                            else {
+                                                user.purchase.push(purchase._id);
+                                            }
+                                        });
+                                    user.applications.push(app._id);
+                                    user.save(function(err){
+                                        if (err) return next(err);
+                                        else return res.status(200).json({
+                                            status      : 200,
+                                            message     : "Application added",
+                                            data        : {
+                                                payment : result
+                                            }
+                                        });
+                                    });
+                                }
+                                else {
+                                    return next(req.app.getError(402, "Payment not completed.", result));
+                                }
+                            }
+                        });
                     }
-                }
-                res.redirect(redirectUrl);
+                });
             }
-        }
+        });
     });
-}
+
+
 
 module.exports = router;

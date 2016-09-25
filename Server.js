@@ -34,6 +34,16 @@ var mongo_express = require('mongo-express/lib/middleware');
 var mongo_express_config = require('./node_modules/mongo-express/config');
 var passport = require('passport');
 var morgan = require('morgan');
+var braintree = require("braintree");
+
+var gateway = braintree.connect({
+    environment: braintree.Environment.Sandbox,
+    merchantId: "f9584skpwt8q27k5",
+    publicKey: "vgpxt3krqdxxyxy9",
+    privateKey: "923db149431faa749afed43e46e5c2fd"
+});
+
+app.set('gateway', gateway);
 
 app.use(require("express-session")({
     secret: process.env.jwtSecretKey,
@@ -50,14 +60,6 @@ require("./config/passport")(passport);
 require('./routes/auth/google')(app, passport);
 require("./routes/auth/facebook")(app, passport);
 
-var paypal = require('paypal-rest-sdk');
-paypal.configure({
-    'mode': 'sandbox', //sandbox or live
-    'client_id': 'AUmyssMjyk_15NgOdzqywp-dymajU9PHluffDommedXoSmNjapwsq85WXHf2lflXlFp04PPktl8kMQZY',
-    'client_secret': 'EKBI_jwlHHKzagiuPr3enPxze4YLSQQVAzGSs1CeI6l8HveY6KsblAxLRorFhQLpwiLVdSSNaM1XwR26'
-});
-
-app.set('paypal', paypal);
 
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true }));
 
