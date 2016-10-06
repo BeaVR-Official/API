@@ -8,6 +8,8 @@ var expressjwt = require('express-jwt');
 var permissions = require("../permissions");
 var Projects = require("../../models/projects");
 var fs = require("fs");
+var uploadApplications = multer({ dest: '/home/API/uploads/creator/'});
+
 
 router.get("/projects",
     expressjwt({secret: process.env.jwtSecretKey}),
@@ -43,7 +45,7 @@ router.get("/:idUser/projects",
             });
         });
     }
-)
+);
 
 router.get("/projects/:idProject",
     expressjwt({secret: process.env.jwtSecretKey}),
@@ -114,6 +116,27 @@ router.delete("/:idUser/projects/:idProject",
     }
 );
 
+router.post("/uploads/projects",
+    expressjwt({secret: process.env.jwtSecretKey}),
+    permissions(["admin", "me"]),
+    uploadApplications.single("file"),
+    function(req, res, next) {
+        fs.rename(req.file.path, req.file.path + ".zip", function (err) {
+            if (err)
+                return next(err);
+            else {
+                return res.status(200).json({
+                    status      : 200,
+                    message     : "OK",
+                    data        : {
+                        source  : "http://beavr.fr:3000/api/uploads/creator/" + req.file.filename + ".zip"
+                    }
+                });
+            }
+        });
+    }
+);
+
 router.post("/:idUser/projects",
     expressjwt({secret: process.env.jwtSecretKey}),
     permissions(["admin", "me"]),
@@ -132,6 +155,23 @@ router.post("/:idUser/projects",
                 }
             });
         });
+    }
+);
+
+router.delete("/uploads/projects/:applicationName",
+    expressjwt({secret: process.env.jwtSecretKey}),
+    permissions(["admin"]),
+    function(req, res, next) {
+        if (fs.existsSync("/home/API/uploads/creator/" + req.params.applicationName)) {
+            fs.unlink("/home/API/uploads/creator/" + req.params.applicationName, function(err) {
+                if (err) return next(err);
+                else return res.status(200).json({
+                    status      : 200,
+                    message     : "OK"
+                });
+            });
+        }
+        else return next(req.app.getError(404, "File not found", null));
     }
 );
 

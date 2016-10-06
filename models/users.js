@@ -24,8 +24,8 @@ var userSchema = new Schema({
     rights           : { type: ObjectId, ref: 'rights', default: "57a3609edfc0aa2381bde52e"},
     public          : {
         pseudo      : String,
-        email       : String,
         picture     : String,
+        applications: [{ type: ObjectId, ref: 'applications'}],
         created_at  : String
     },
     google          : {
@@ -56,6 +56,7 @@ userSchema.pre('save', true, function(next, done) {
     this.public.pseudo = this.pseudo;
     this.public.email = this.email;
     this.public.created_at = this.created_at;
+    this.public.applications = this.applications;
     this.id = this._id.toHexString();
     var self = this;
     mongoose.models["users"].findOne({pseudo : self.pseudo},function(err, results) {
