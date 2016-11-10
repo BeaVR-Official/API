@@ -502,6 +502,12 @@ router.delete("/:idApplication",
 router.post("/",
     expressjwt({secret: process.env.jwtSecretKey}),
     permissions(["admin", "Developer"]),
+    function(req, res, next) {
+        Applications.findOne({name: req.body.name}, function(err, app) {
+            if (err || !app) return next();
+            else return next(req.app.getError(409, "Application name already used"));
+        });
+    },
     function(req,res, next) {
         console.log(req.body);
         if (req.body.name == undefined || req.body.name == ""||
@@ -526,8 +532,8 @@ router.post("/",
             newValidationApp.application.author = req.user.id;
             newValidationApp.application.price = req.body.price;
             newValidationApp.save(function(err) {
-                if (err) return next(err);
-                else res.status(200).json({
+                if (err) return next(req.app.getError(409, "Conflicts, resources already existing.", err));
+                else return res.status(200).json({
                     status          : 200,
                     message         : "Application saved. Please wait for admin review.",
                     data            : {
@@ -1191,9 +1197,9 @@ router.post('/:idApplication/checkout',
                                 if (result.success == true) {
                                     var purchase = new Purchase();
                                     purchase.application = req.params.idApplication;
-                                    purchase.amount = result.amount;
-                                    purchase.payment = result.paymentInstrumentType;
-                                    purchase.transactionId = result.id;
+                                    purchase.amount = result.transaction.amount;
+                                    purchase.payment = result.transaction.paymentInstrumentType;
+                                    purchase.transactionId = result.transaction.id;
                                         purchase.save(function(err) {
                                             if (err) return next(err);
                                             else {

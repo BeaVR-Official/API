@@ -22,11 +22,11 @@ var ValidationSchema = new Schema({
         price           : {type: Number, min: 0, max: 99}
     },
     device              : {
-        name            : { type: String, unique: true },
+        name            : { type: String },
         image           : String
     },
     categorie           : {
-        name            : { type: String, unique: true },
+        name            : { type: String },
         description     : { type: String}
     },
     created_at          : Date,

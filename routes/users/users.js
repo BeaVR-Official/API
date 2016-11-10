@@ -540,7 +540,7 @@ router.get("/:idUser/comments/:idApp",
 
 router.get('/:idUser/progressions/:idApp',
     expressjwt({secret: process.env.jwtSecretKey}),
-    permissions("admin", "logged"),
+    permissions(["admin", "logged"]),
     function(req, res, next) {
         try {
             Users.findOne({ id : req.user.id, progressions : { application: req.params.idApp }}, function(err, user) {
@@ -562,7 +562,7 @@ router.get('/:idUser/progressions/:idApp',
 
 router.get('/:idUser/progressions',
     expressjwt({secret: process.env.jwtSecretKey}),
-    permissions("admin", "logged"),
+    permissions(["admin", "logged"]),
     function(req, res, next) {
         try {
             Users.findOne({ id : req.user.id }, function(err, user) {
@@ -582,6 +582,67 @@ router.get('/:idUser/progressions',
     }
 );
 
+var Rights = require('../../models/rights');
+
+router.get('/:idUser/developer/enabled',
+    expressjwt({secret: process.env.jwtSecretKey}),
+    permissions(["me", "admin"]),
+    function(req, res, next) {
+        Rights.findOne({name: "Developer"}, function(err, right) {
+            if (err) return next(err);
+            else if (!right) return next(req.app.getError(404, "Not developer mode found"));
+            else {
+                Users.findOne({_id : req.params.idUser}, function(err, user) {
+                   if (err) return next(err);
+                    else if (!user) return next(req.app.getError(404, "User not found"));
+                    else {
+                        user.rights = right._id;
+                       user.save(function(err) {
+                           if (err) return next(err);
+                           else return res.status(200).json({
+                               status   : 200,
+                               message  : "OK",
+                               data     : {
+                                   user : user
+                               }
+                           })
+                       });
+                   }
+                });
+            }
+        });
+    }
+);
+
+router.delete('/:idUser/developer/enabled',
+    expressjwt({secret: process.env.jwtSecretKey}),
+    permissions(["me", "admin"]),
+    function(req, res, next) {
+        Users.findOne({_id: req.params.idUser}, function(err, user) {
+            if (err) return next(err);
+            else if (!user) return next(req.app.getError(404, "User not found"));
+            else {
+                Rights.findOne({name: User}, function(err, right) {
+                   if (err) return next(err);
+                    else if (!right) return next(req.app.getError(500, "Internal serveur error"));
+                    else {
+                        user.rights = right._id;
+                       user.save(function(err) {
+                           if (err) return next(err);
+                           else return res.status(200).json({
+                               status   : 200,
+                               message  : "OK",
+                               data     : {
+                                   data : user
+                               }
+                           });
+                       });
+                   }
+                });
+            }
+        })
+    }
+);
 
 
 module.exports = router;

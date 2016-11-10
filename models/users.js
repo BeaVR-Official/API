@@ -43,6 +43,7 @@ var userSchema = new Schema({
         gender      : String,
         facebookurl : String
     },
+    projects         : [{type: ObjectId, ref: 'projects'}],
     token           : String,
     created_at      : Date,
     updated_at      : Date

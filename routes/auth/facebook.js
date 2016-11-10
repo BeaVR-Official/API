@@ -11,20 +11,21 @@ module.exports = function(app, passport) {
         function(req, res, next) {
             try {
                 var token = jwt.sign({id : req.user.id}, process.env.jwtSecretKey);
-                res.status(200).json({
+                return res.redirect('http://store.beavr.fr/#/logSuccess?token='+token + '&userID='+req.user.id);
+               /* res.status(200).json({
                     status      : 200,
                     message     : "OK",
                     data        : {
                         token   : token
                     }
-                });
+                });*/
             } catch (error) {
                 next(error);
             }
         });
 
     app.get('/auth/facebook/logFailed', function(req, res, next) {
-        next(req.app.getError(401, "Unauthorized: authentication failed", null));
+        return res.redirect("http://store.beavr.fr/#/logError?error='Unauthorized: authentication failed'");
     });
     // =====================================
     // GOOGLE ROUTES =======================

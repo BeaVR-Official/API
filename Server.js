@@ -30,6 +30,7 @@ var devices = require('./routes/devices/devices');
 var categories = require('./routes/categories/categories');
 var comments = require('./routes/comments/comments');
 var newsletter = require('./routes/newsletter/newsletter');
+var creator = require('./routes/creator/projects');
 var mongo_express = require('mongo-express/lib/middleware');
 var mongo_express_config = require('./node_modules/mongo-express/config');
 var passport = require('passport');
@@ -98,6 +99,7 @@ app.use('/api/devices', devices);
 app.use('/api/categories', categories);
 app.use('/api/comments', comments);
 app.use('/api/newsletter', newsletter);
+app.use('/api/creator', creator);
 
 function setPathError () {
     app.get('*', function(req, res, next) {

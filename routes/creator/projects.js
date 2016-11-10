@@ -8,6 +8,7 @@ var expressjwt = require('express-jwt');
 var permissions = require("../permissions");
 var Projects = require("../../models/projects");
 var fs = require("fs");
+var multer = require('multer');
 var uploadApplications = multer({ dest: '/home/API/uploads/creator/'});
 
 
@@ -87,16 +88,23 @@ router.delete("/projects/:idProject",
     expressjwt({secret: process.env.jwtSecretKey}),
     permissions(["admin"]),
     function(req, res, next) {
-        // fs unlink here
-        Projects.findAndRemove({id: req.params.idProject}, function(err) {
+        Users.findOne({_id: req.user.id}, function(err, user) {
             if (err) return next(err);
+            else if (!user) return next(req.app.getError(404, "Invalid token please try log yourself again."))
             else {
-                return res.status(200).json({
-                    status      : 200,
-                    message     : "Delete successful"
+                user.projects.delete(user.projects.find(req.params.idProject));
+                Projects.findAndRemove({id: req.params.idProject}, function(err) {
+                    if (err) return next(err);
+                    else {
+                        return res.status(200).json({
+                            status      : 200,
+                            message     : "Delete successful"
+                        });
+                    }
                 });
             }
         });
+
     }
 );
 
@@ -147,13 +155,44 @@ router.post("/:idUser/projects",
         project.author = req.params.idUser;
         project.save(function(err) {
             if (err) return next(err);
-            else return res.status(200).json({
-                status      : 200,
-                message     : "OK",
-                data        : {
-                    project : project
+            else {
+                Users.findOne({_id: req.params.idUser}, function(err, user) {
+                    if (err) return next(err);
+                    else if (!user) return next(req.app.getError(404, "User not found"));
+                    else {
+                        user.projects.push(project._id);
+                        return res.status(200).json({
+                            status      : 200,
+                            message     : "OK",
+                            data        : {
+                                project : project
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+);
+
+router.get('/:idUser/projects',
+    expressjwt({secret: process.env.jwtSecretKey}),
+    permissions(["admin", "me"]),
+    function(req, res, next) {
+        Users.findOne({_id: req.params.idUser})
+            .populate("projects")
+            .exec(function(err, user) {
+                if (err) return next(err);
+                else if (!user) return next(req.app.getError(404, "User not found"));
+                else {
+                    return res.status(200).json({
+                        status  : 200,
+                        message : "OK",
+                        data    : {
+                            projects: user.projects
+                        }
+                    })
                 }
-            });
         });
     }
 );
@@ -202,3 +241,5 @@ router.put("/:idUser/projects/:idProject",
         });
     }
 );
+
+module.exports = router;

@@ -61,21 +61,38 @@ module.exports = function(passport) {
                         // set all of the relevant information
                         newUser.google.id    = profile.id;
                         newUser.google.token = token;
-                        newUser.password     = token;
                         newUser.google.name  = profile.displayName;
                         newUser.pseudo = profile.displayName.split(" ")[0] + "_" + mongoose.Types.ObjectId();
                         newUser.google.email = profile.emails[0].value; // pull the first email
                         newUser.email = profile.emails[0].value;
                         // save the user
                         newUser.save(function(err) {
-                            if (err)
-                                return done(err);
-                            return done(null, newUser);
+                            if (!err) {
+                                return done(null, newUser);
+                            } else {
+                                User.findOne({email: profile.emails[0].value}, function (err, user) {
+                                    if (err)
+                                        return done(err);
+                                    else
+                                    {
+                                        user.google.id    = profile.id;
+                                        user.google.token = token;
+                                        user.password     = token;
+                                        user.google.name  = profile.displayName;
+                                        user.google.email = profile.emails[0].value; // pull the first email
+                                        user.save(function(err) {
+                                            if (err)
+                                                done(err);
+                                            else
+                                                return done(null, user);
+                                        });
+                                    }
+                                });
+                            }
                         });
                     }
                 });
             });
-
         }));
 
 
@@ -116,8 +133,28 @@ module.exports = function(passport) {
                         // save the user
                         newUser.save(function(err) {
                             if (err)
-                                return done(err);
-                            return done(null, newUser);
+                                User.findOne({email: profile.emails[0].value}, function (err, user) {
+                                    if (err)
+                                        return done(err);
+                                    else
+                                    {
+                                        user.facebook.id    = profile.id;
+                                        user.facebook.token = token;
+                                        user.facebook.firstname  = profile.name.givenName;
+                                        user.facebook.lastname = profile.name.familyName;
+                                        user.facebook.facebookurl = profile.profileUrl;
+                                        user.facebook.gender = profile.gender;
+                                        user.facebook.email = profile.emails[0].value; // pull the first email
+                                        user.save(function(err) {
+                                            if (err)
+                                                done(err);
+                                            else
+                                                return done(null, user);
+                                        });
+                                    }
+                                });
+                            else
+                                return done(null, newUser);
                         });
                     }
                 });
