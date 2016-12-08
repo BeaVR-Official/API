@@ -431,38 +431,24 @@ router.post("/",
                     }
                 }
             }
+
             newUser.save(function(err) {
                 if (err) return next(err);
-                else res.status(200).json({
-                    status  : 200,
-                    message : "OK",
-                    data    : {}
-                }); // OK
+                else {
+                    var repos = __dirname + '/uploads/creator/' + newUser._id;
+                    if (!fs.existsSync(repos)){
+                        fs.mkdirSync(repos);
+                    }
+                    res.status(200).json({
+                        status  : 200,
+                        message : "OK",
+                        data    : {}
+                    });
+                } // OK
             });
         }  catch (error) {
             return next(error);
         }
-        /* try {
-         var query = "INSERT INTO ??(??,??,??,??,??,??) VALUES (?,?,?,?,?,?)";
-         var table = ["Users", "email", "pseudo", "password", "lastName", "firstName", "role",
-         req.body.email, req.body.pseudo, sha1(req.body.password), req.body.lastName, req.body.firstName, req.body.role];
-
-         query = mysql.format(query,table);
-
-         req.app.locals.connection.query(query,function(err,rows){
-         if (!err)
-         res.status(200).json({status: 200, message: "OK", data: { }});
-         else {
-         if (err.code == "ER_DUP_ENTRY")
-         return next(req.app.getError(409, "Conflict: user already exist", null));
-         else
-         return next(req.app.getError(400, "Bad request", null));
-         }
-         });
-         }
-         catch (error) {
-         return next(error);
-         }*/
     }
 );
 

@@ -25,8 +25,6 @@ var Feedbacks = require("../models/feedback");
 var permissions = require("./permissions");
 var fs = require("fs");
 var shortid = require('shortid');
-var multer = require('multer');
-var uploadApplication = multer({ dest: '/home/API/uploads/applications/'});
 
 /**
  * @api {get} / Réponse basique
@@ -531,24 +529,6 @@ router.get("/dashboardInfos",
         } catch (error) {
             return next(error);
         }
-    }
-);
-
-router.post("/upload/applications",
-    expressjwt({secret: process.env.jwtSecretKey}),
-    permissions(["logged"]),
-    uploadApplication.single('file'),
-    function(req, res, next) {
-        fs.rename(req.file.path, req.file.path + ".zip", function (err) {
-            if (err) return next(err);
-            return res.status(200).json({
-                status: 200,
-                message: "OK",
-                data: {
-                    filePath: "http://beavr.fr:3000/api/uploads/applications/" + req.file.filename + ".zip"
-                }
-            })
-        });
     }
 );
 
