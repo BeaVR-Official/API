@@ -435,7 +435,7 @@ router.post("/",
             newUser.save(function(err) {
                 if (err) return next(err);
                 else {
-                    var repos = __dirname + '/uploads/creator/' + newUser._id;
+                    var repos = '/home/API/uploads/creator/' + newUser._id;
                     if (!fs.existsSync(repos)){
                         fs.mkdirSync(repos);
                     }

@@ -22,6 +22,12 @@ router.post("/:idUser/projects",
         project.description = (req.body.description != undefined) ? req.body.description : "";
         project.author = req.params.idUser;
         project.save(function(err) {
+            var repos = '/home/API/uploads/creator/' + project.author + "/" + project._id;
+            if (err) {
+                if (fs.existsSync(repos)) {
+                    fsextra.rmrfSync(repos);
+                }
+            }
             return (err) ? next(err): res.status(200).json({
                 status      : 200,
                 message     : "OK",
@@ -62,7 +68,7 @@ router.get("/:idUser/projects/:idProject",
                     status       : 200,
                     message      : "OK",
                     data         : {
-                        projects : projects
+                        project  : project
                     }
                 });
             });
@@ -74,7 +80,8 @@ router.delete('/:idUser/projects/:idProject',
     permissions(["admin", "me"]),
     function(req, res, next) {
         Projects.findOneAndRemove({author: req.params.idUser, _id: req.params.idProject})
-            .exec(function(err) {
+            .exec(function(err, post) {
+                post.remove();
                 return (err) ? next(err) : res.status(200).json({
                     status          : 200,
                     message         : "Project deleted"
@@ -91,6 +98,8 @@ router.post('/:idUser/projects/:idProject/save',
         var save = new Saves();
         save.author = req.params.idUser;
         save.project = req.params.idProject;
+        save.sceneDescriptors  = req.params.sceneDescriptors;
+        save.startingSceneUuid = req.params.startingSceneUuid;
         save.save(function(err) {
             return (err) ? next(err) : res.status(200).json({
                 status      : 200,
@@ -143,8 +152,10 @@ router.delete('/:idUser/projects/:idProject/save/:idSave',
     expressjwt({secret: process.env.jwtSecretKey}),
     permissions(["admin", "me"]),
     function(req, res, next) {
-        Saves.findOneAndRemove({author: req.params.idUser, projects: req.params.idProject, _id: req.params.idSave})
-            .exec(function(err) {
+        Saves.findOneAndRemove({author: req.params.idUser, project: req.params.idProject, _id: req.params.idSave})
+            .exec(function(err, post) {
+                console.log(post);
+                post.remove();
                 return (err) ? next(err) : res.status(200).json({
                     status      : 200,
                     message     : "Save deleted"
