@@ -43,16 +43,16 @@ router.get("/:idUser/projects",
     expressjwt({secret: process.env.jwtSecretKey}),
     permissions(["admin", "me"]),
     function(req, res, next) {
-       Projects.find({author: req.params.idUser})
-           .exec(function(err, projects) {
-               return (err) ? next(err) : res.status(200).json({
-                   status       : 200,
-                   message      : "OK",
-                   data         : {
-                       projects : projects
-                   }
-               });
-           });
+        Projects.find({author: req.params.idUser})
+            .exec(function(err, projects) {
+                return (err) ? next(err) : res.status(200).json({
+                    status       : 200,
+                    message      : "OK",
+                    data         : {
+                        projects : projects
+                    }
+                });
+            });
     }
 );
 
@@ -65,12 +65,12 @@ router.get("/:idUser/projects/:idProject",
                 if (err) return next(err);
                 else if (!project) return next(req.app.getError(404, "Project not found"));
                 else res.status(200).json({
-                    status       : 200,
-                    message      : "OK",
-                    data         : {
-                        project  : project
-                    }
-                });
+                        status       : 200,
+                        message      : "OK",
+                        data         : {
+                            project  : project
+                        }
+                    });
             });
     }
 );
@@ -136,14 +136,14 @@ router.get('/:idUser/projects/:idProject/save',
     permissions(["admin", "me"]),
     function(req, res, next) {
         Saves.find({author: req.params.idUser, project: req.params.idProject }).
-            exec(function(err, saves) {
-                return (err) ? next(err): res.status(200).json({
-                    status      : 200,
-                    message     : "OK",
-                    data        : {
-                        saves   : saves
-                    }
-                })
+        exec(function(err, saves) {
+            return (err) ? next(err): res.status(200).json({
+                status      : 200,
+                message     : "OK",
+                data        : {
+                    saves   : saves
+                }
+            })
         })
     }
 );
@@ -164,40 +164,38 @@ router.delete('/:idUser/projects/:idProject/save/:idSave',
     }
 );
 
-var uploadFiles = multer({}) ;
+var uploadFiles = multer({dest:  '/home/API/uploads/temp/'}) ;
 router.post('/:idUser/projects/:idProject/save/:idSave/files',
     expressjwt({secret: process.env.jwtSecretKey}),
     permissions(["admin", "me"]),
-    function(req,res, next) {
-        uploadFiles = multer({ dest: __dirname + '/uploads/creator/' + req.params.idUser + "/" + req.params.idProject + "/" + req.params.idSave});
-        next();
-    },
-    uploadFiles.array('files', 3),
+    uploadFiles.single('file'),
     function(req, res, next) {
-        for (var i = 0; i < req.files.length; ++i) {
-            var files = new Files();
-            files.absolutePath = req.files[i].path;
-            files.relativePath = "http://beavr.fr:3000/api/uploads/creator/" + req.params.idUser + "/" + req.params.idProject + "/" + req.params.idSave + "/" + req.files[i].filename;
-            files.author = req.params.idUser;
-            files.filename = req.files[i].filename;
-            files.save(function(err) {
-                if (err) return next(err);
-                else {
-                    Saves.findOne({_id: req.params.idSave, author: req.params.idUser})
-                        .exec(function(err, save) {
-                            if (err) return next(err);
-                            else if (!save) return next(req.app.getError(404, "Save does not exist"));
-                            else {
-                                save.files.push(files._id);
-                                save.save();
-                            }
-                        });
-                }
-            });
-        }
-        res.status(200).json({
-            status      : 200,
-            message     : "Saved"
+        var files = new Files();
+        files.absolutePath = '/home/API/uploads/creator/' + req.params.idUser + "/" + req.params.idProject + "/" + req.params.idSave + '/' + req.file.filename;
+        files.relativePath = "http://beavr.fr:3000/api/uploads/creator/" + req.params.idUser + "/" + req.params.idProject + "/" + req.params.idSave + "/" + req.file.filename;
+        files.author = req.params.idUser;
+        files.filename = req.file.filename;
+        files.saves = req.params.idSave;
+        files.save(function(err) {
+            if (err) return next(err);
+            else {
+                Saves.findOne({_id: req.params.idSave, author: req.params.idUser})
+                    .exec(function(err, save) {
+                        if (err) return next(err);
+                        else if (!save) return next(req.app.getError(404, "Save does not exist"));
+                        else {
+                            save.files.push(files._id);
+                            save.save();
+                            return res.status(200).json({
+                                status      : 200,
+                                message     : "Saved",
+                                data        : {
+                                    file    : files
+                                }
+                            });
+                        }
+                    });
+            }
         });
     }
 );
@@ -206,19 +204,19 @@ router.get('/:idUser/projects/:idProject/save/:idSave/files',
     expressjwt({secret: process.env.jwtSecretKey}),
     permissions(["admin", "me"]),
     function(req, res, next) {
-       Saves.findOne({_id: req.params.idSave, author: req.params.idUser})
-           .populate("files")
-           .exec(function(err, save) {
-               if (err) return next(err);
-               else if (!save) return next(404, "Save does not exist");
-               else return res.status(200).json({
-                       status       : 200,
-                       message      : "OK",
-                       data         : {
-                           files    :  save.files
-                       }
-                   })
-           });
+        Saves.findOne({_id: req.params.idSave, author: req.params.idUser})
+            .populate("files")
+            .exec(function(err, save) {
+                if (err) return next(err);
+                else if (!save) return next(404, "Save does not exist");
+                else return res.status(200).json({
+                        status       : 200,
+                        message      : "OK",
+                        data         : {
+                            files    :  save.files
+                        }
+                    })
+            });
     }
 );
 
@@ -237,7 +235,7 @@ router.get('/:idUser/projects/:idProject/save/:idSave/files/:idFile',
                         data        : {
                             file    : file
                         }
-                });
+                    });
             });
     }
 );
@@ -247,11 +245,12 @@ router.delete('/:idUser/projects/:idProject/save/:idSave/files/:idFile',
     permissions(["admin", "me"]),
     function(req, res, next) {
         Files.findOneAndRemove({_id: req.params.idFile, author: req.params.idUser})
-            .exec(function(err) {
-               return (err) ? next(err) : res.status(200).json({
-                   status       : 200,
-                   message      : "File deleted"
-               });
+            .exec(function(err, post) {
+                post.remove();
+                return (err) ? next(err) : res.status(200).json({
+                    status       : 200,
+                    message      : "File deleted"
+                });
             });
     }
 );
