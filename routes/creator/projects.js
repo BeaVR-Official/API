@@ -60,7 +60,7 @@ router.get("/:idUser/projects/:idProject",
     expressjwt({secret: process.env.jwtSecretKey}),
     permissions(["admin", "me"]),
     function(req, res, next) {
-        Projects.find({author: req.params.idUser, _id: req.params.idProject})
+        Projects.findOne({author: req.params.idUser, _id: req.params.idProject})
             .exec(function(err, project) {
                 if (err) return next(err);
                 else if (!project) return next(req.app.getError(404, "Project not found"));
@@ -71,6 +71,27 @@ router.get("/:idUser/projects/:idProject",
                             project  : project
                         }
                     });
+            });
+    }
+);
+
+router.put("/:idUser/projects/:idProject",
+    expressjwt({secret: process.env.jwtSecretKey}),
+    permissions(["admin", "me"]),
+    function(req, res, next) {
+        Projects.findOneAndUpdate({author: req.params.idUser, _id: req.params.idProject}, {name: req.body.name, description: req.body.description}, {upsert:true})
+            .exec(function(err, doc) {
+                if (err) return next(err);
+                else if (!doc) return next(req.app.getError(404, "Project not found"));
+                else {
+                    return res.status(200).json({
+                        status       : 200,
+                        message      : "OK",
+                        data         : {
+                            project  : doc
+                        }
+                    });
+                }
             });
     }
 );
@@ -98,8 +119,8 @@ router.post('/:idUser/projects/:idProject/save',
         var save = new Saves();
         save.author = req.params.idUser;
         save.project = req.params.idProject;
-        save.sceneDescriptors  = req.params.sceneDescriptors;
-        save.startingSceneUuid = req.params.startingSceneUuid;
+        save.sceneDescriptors  = req.body.sceneDescriptors;
+        save.startingSceneUuid = req.body.startingSceneUuid;
         save.save(function(err) {
             return (err) ? next(err) : res.status(200).json({
                 status      : 200,
